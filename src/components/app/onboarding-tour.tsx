@@ -298,7 +298,9 @@ export function OnboardingTour({ open, onClose }: { open: boolean; onClose: (com
   const scene = SCENES[i];
   const last = i === SCENES.length - 1;
   // Narration (pre-generated with ElevenLabs) is opt-in: browsers block autoplay with sound.
-  const [sound, setSound] = useState(false);
+  // On by default. If the browser blocks autoplay with sound, it starts on the first tap or key press.
+  const [sound, setSound] = useState(true);
+  const [blocked, setBlocked] = useState(false);
   const voice = useRef<HTMLAudioElement>(null);
   const narration = (DURATIONS as Record<string, number>)[scene.id];
   const duration = sound && narration ? narration + 0.8 : scene.seconds;
@@ -325,9 +327,20 @@ export function OnboardingTour({ open, onClose }: { open: boolean; onClose: (com
   useEffect(() => {
     const a = voice.current;
     if (!a) return;
-    if (open && sound && !paused) void a.play().catch(() => setSound(false));
+    if (open && sound && !paused) void a.play().then(() => setBlocked(false), () => setBlocked(true));
     else a.pause();
   }, [open, sound, paused, i]);
+
+  useEffect(() => {
+    if (!open || !blocked || !sound) return;
+    const unlock = () => {
+      const a = voice.current;
+      if (a) { a.currentTime = Math.min(elapsedRef.current / 1000, a.duration || 0); void a.play().then(() => setBlocked(false), () => {}); }
+    };
+    window.addEventListener("pointerdown", unlock, { once: true });
+    window.addEventListener("keydown", unlock, { once: true });
+    return () => { window.removeEventListener("pointerdown", unlock); window.removeEventListener("keydown", unlock); };
+  }, [open, blocked, sound]);
 
   const onKey = (e: React.KeyboardEvent) => {
     if (e.key === "Escape") onClose(false);
@@ -368,12 +381,14 @@ export function OnboardingTour({ open, onClose }: { open: boolean; onClose: (com
             <div className="flex items-center gap-1">
               <audio ref={voice} key={scene.id} src={`/tour/${scene.id}.mp3`} preload="auto" />
               <button
-                onClick={() => { setSound((s) => !s); setPaused(false); if (voice.current) voice.current.currentTime = Math.min(elapsed / 1000, voice.current.duration || 0); }}
+                onClick={(e) => { e.stopPropagation(); if (blocked) { setBlocked(false); setSound(true); } else setSound((s) => !s); setPaused(false); if (voice.current) voice.current.currentTime = Math.min(elapsed / 1000, voice.current.duration || 0); }}
                 aria-pressed={sound}
-                className={`inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm transition-colors ${sound ? "text-ink-2 hover:bg-sunk hover:text-ink" : "bg-rust-ink text-white shadow-sm hover:bg-[#87392a]"}`}
+                className={`inline-flex h-10 items-center gap-1.5 whitespace-nowrap rounded-full px-3.5 text-sm transition-colors ${sound && !blocked ? "text-ink-2 hover:bg-sunk hover:text-ink" : "bg-rust-ink text-white shadow-sm hover:bg-[#87392a]"}`}
               >
-                {sound ? <Volume2 className="size-4" aria-hidden /> : <VolumeX className="size-4" aria-hidden />}
-                <span className={sound ? "sr-only" : ""}>{sound ? "Mute narration" : <><span className="sm:hidden">Narration</span><span className="hidden sm:inline">Turn on narration</span></>}</span>
+                {sound && !blocked ? <Volume2 className="size-4" aria-hidden /> : <VolumeX className="size-4" aria-hidden />}
+                <span className={sound && !blocked ? "sr-only" : ""}>
+                  {sound && !blocked ? "Mute narration" : blocked ? <><span className="sm:hidden">Tap for sound</span><span className="hidden sm:inline">Tap anywhere to hear narration</span></> : <><span className="sm:hidden">Narration</span><span className="hidden sm:inline">Turn on narration</span></>}
+                </span>
               </button>
               {!last && (
                 <button onClick={() => setPaused((p) => !p)} className="grid size-10 place-items-center rounded-full text-ink-2 hover:bg-sunk hover:text-ink" aria-label={paused ? "Play walkthrough" : "Pause walkthrough"}>
