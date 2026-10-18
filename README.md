@@ -21,6 +21,12 @@
   <img alt="npm audit" src="https://img.shields.io/badge/npm%20audit-0%20vulnerabilities-3E6B48?style=flat-square">
 </p>
 
+<p align="center">
+  <a href="docs/demo/ParcelProof-story-720p.mp4"><img src="docs/demo/ParcelProof-poster.jpg" alt="Watch the 90-second ParcelProof film" width="720" /></a>
+  <br />
+  <sub>▶ <a href="docs/demo/ParcelProof-story-720p.mp4"><b>Watch the 90-second film</b></a> · 720p · narrated with ElevenLabs</sub>
+</p>
+
 ---
 
 ## ✦ The 90-second story
