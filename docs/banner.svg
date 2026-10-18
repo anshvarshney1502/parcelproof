@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="420" viewBox="0 0 1280 420" role="img" aria-label="ParcelProof — every claim needs evidence">
+  <defs>
+    <pattern id="grain" width="4" height="4" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="0.6" fill="#242923" opacity="0.05"/></pattern>
+    <radialGradient id="glow" cx="0.85" cy="0.15" r="0.6"><stop offset="0" stop-color="#B9563C" stop-opacity="0.12"/><stop offset="1" stop-color="#B9563C" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1280" height="420" fill="#F5F3ED"/>
+  <rect width="1280" height="420" fill="url(#grain)"/>
+  <rect width="1280" height="420" fill="url(#glow)"/>
+  <line x1="64" y1="356" x2="1216" y2="356" stroke="#DEDCD2"/>
+
+  <!-- wordmark -->
+  <g transform="translate(64 64)">
+    <rect x="0" y="4" width="34" height="28" rx="3" fill="none" stroke="#242923" stroke-width="2.4"/>
+    <path d="M0 12h34M17 4v8" stroke="#242923" stroke-width="2.4"/>
+    <path d="M20 22l3.2 3.2 6.4-6.8" fill="none" stroke="#B9563C" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="48" y="28" font-family="Georgia, 'Times New Roman', serif" font-size="28" fill="#242923">Parcel<tspan font-style="italic" fill="#9C4530">Proof</tspan></text>
+  </g>
+
+  <text x="64" y="176" font-family="Georgia, 'Times New Roman', serif" font-size="52" fill="#242923" letter-spacing="-1">Every claim needs evidence.</text>
+  <text x="64" y="238" font-family="Georgia, 'Times New Roman', serif" font-size="52" font-style="italic" fill="#9C4530" letter-spacing="-1">Every piece of evidence needs context.</text>
+  <text x="64" y="296" font-family="'Helvetica Neue', Arial, sans-serif" font-size="20" fill="#62665F">Voice-first dispute preparation for online sellers · Gemma · Mastra · ElevenLabs · MongoDB Atlas</text>
+
+  <!-- status chips -->
+  <g font-family="'IBM Plex Mono', Menlo, monospace" font-size="13" letter-spacing="1">
+    <g transform="translate(64 382)"><rect width="112" height="24" rx="2" fill="#E5EDE3" stroke="#C4D6C1"/><text x="14" y="16" fill="#3E6B48">SUPPORTED</text></g>
+    <g transform="translate(188 382)"><rect width="128" height="24" rx="2" fill="#F6E4DC" stroke="#E3C0B2"/><text x="14" y="16" fill="#9C4530">CONFLICTING</text></g>
+    <g transform="translate(328 382)"><rect width="122" height="24" rx="2" fill="#F5EAD2" stroke="#E6D1A6"/><text x="14" y="16" fill="#8A5A12">UNVERIFIED</text></g>
+    <g transform="translate(462 382)"><rect width="92" height="24" rx="2" fill="#E2E9EE" stroke="#C5D2DC"/><text x="14" y="16" fill="#3F5A6C">MISSING</text></g>
+  </g>
+
+  <!-- parcel illustration -->
+  <g transform="translate(930 120)">
+    <path d="M-150 30 L-40 70" stroke="#242923" stroke-opacity=".35"/>
+    <path d="M170 -10 L60 60" stroke="#B9563C" stroke-opacity=".7"/>
+    <path d="M170 170 L70 120" stroke="#242923" stroke-opacity=".35"/>
+    <rect x="-210" y="-20" width="70" height="90" rx="2" fill="#FCFBF7" stroke="#DEDCD2" transform="rotate(-6 -175 25)"/>
+    <rect x="160" y="-60" width="70" height="90" rx="2" fill="#FCFBF7" stroke="#DEDCD2" transform="rotate(5 195 -15)"/>
+    <g transform="translate(160 140) rotate(-3)"><rect width="78" height="56" rx="6" fill="#242923"/><g fill="#E3A58F">
+      <rect x="10" y="24" width="3" height="10" rx="1.5"/><rect x="16" y="18" width="3" height="22" rx="1.5"/><rect x="22" y="14" width="3" height="30" rx="1.5"/><rect x="28" y="20" width="3" height="18" rx="1.5"/><rect x="34" y="12" width="3" height="34" rx="1.5"/><rect x="40" y="22" width="3" height="14" rx="1.5"/><rect x="46" y="16" width="3" height="26" rx="1.5"/><rect x="52" y="24" width="3" height="10" rx="1.5"/><rect x="58" y="19" width="3" height="20" rx="1.5"/><rect x="64" y="25" width="3" height="8" rx="1.5"/></g></g>
+    <path d="M-60 40 L20 8 L110 40 L30 76 Z" fill="#D4B98F"/>
+    <path d="M-60 40 L30 76 L30 166 L-60 128 Z" fill="#C7A97C"/>
+    <path d="M30 76 L110 40 L110 128 L30 166 Z" fill="#B8996C"/>
+    <path d="M-20 24 L70 58 L70 68 L-20 34 Z" fill="#B39367"/>
+    <line x1="-170" y1="210" x2="230" y2="210" stroke="#242923" stroke-opacity=".5"/>
+    <circle cx="-120" cy="210" r="4" fill="#242923"/><circle cx="-30" cy="210" r="4" fill="#242923"/><circle cx="60" cy="210" r="6" fill="#B9563C"/><circle cx="150" cy="210" r="4" fill="#242923"/>
+  </g>
+</svg>

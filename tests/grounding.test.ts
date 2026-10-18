@@ -161,3 +161,21 @@ describe("briefing transcript", () => {
     expect(sentenceSpans("Weight 1.2 kg tha. R. Kumar ne sign kiya! Theek hai?").map((s) => s.text)).toEqual(["Weight 1.2 kg tha.", "R. Kumar ne sign kiya!", "Theek hai?"]);
   });
 });
+
+import { parseRange, readFormLimited } from "@/lib/stream";
+describe("HTTP hardening", () => {
+  it("parses byte ranges and rejects unsatisfiable ones", () => {
+    expect(parseRange("bytes=0-9", 100)).toEqual({ start: 0, end: 9 });
+    expect(parseRange("bytes=90-", 100)).toEqual({ start: 90, end: 99 });
+    expect(parseRange("bytes=-10", 100)).toEqual({ start: 90, end: 99 });
+    expect(parseRange("bytes=0-500", 100)).toEqual({ start: 0, end: 99 });
+    expect(parseRange("bytes=200-300", 100)).toBeNull();
+    expect(parseRange("items=0-1", 100)).toBeNull();
+    expect(parseRange(null, 100)).toBeNull();
+  });
+  it("stops reading an upload as soon as it exceeds the cap, even without Content-Length", async () => {
+    const big = new ReadableStream({ start(c) { for (let i = 0; i < 20; i++) c.enqueue(new Uint8Array(1024)); c.close(); } });
+    const req = new Request("http://x/upload", { method: "POST", body: big, headers: { "content-type": "multipart/form-data; boundary=x" }, duplex: "half" } as RequestInit);
+    await expect(readFormLimited(req, 4096, "too big")).rejects.toMatchObject({ status: 413 });
+  });
+});

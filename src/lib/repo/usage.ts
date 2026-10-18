@@ -26,7 +26,7 @@ export async function usageToday(ownerId: string) {
   const { usage } = await collections();
   const rows = await usage.find({ ownerId, day: today() }).toArray();
   const get = (k: UsageDoc["kind"]) => rows.find((r) => r.kind === k)?.count ?? 0;
-  return { ai: get("ai"), tts: get("tts"), upload: get("upload") };
+  return { ai: get("ai"), tts: get("tts"), stt: get("stt"), upload: get("upload") };
 }
 
 export async function audit(ownerId: string, action: string, targetId?: string) {

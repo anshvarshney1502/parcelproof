@@ -3,6 +3,7 @@ import { requireUserId } from "@/lib/session";
 import { limits, ConfigError } from "@/lib/env";
 import { detectFile, FileRejected } from "@/lib/files/validate";
 import { scribeClient } from "@/lib/voice/stt";
+import { readFormLimited } from "@/lib/stream";
 import { VoiceError } from "@/lib/voice/tts";
 import { consume, refund } from "@/lib/repo/usage";
 
@@ -14,8 +15,7 @@ export async function POST(req: Request) {
   return handle(async () => {
     sameOrigin(req);
     const userId = await requireUserId();
-    if (Number(req.headers.get("content-length") ?? 0) > MAX_BYTES + 64 * 1024) throw new HttpError(413, "Recordings for dictation must be under 5 MB.", "too_large");
-    const form = await req.formData().catch(() => null);
+    const form = await readFormLimited(req, MAX_BYTES + 64 * 1024, "Recordings for dictation must be under 5 MB.");
     const file = form?.get("file");
     if (!(file instanceof File) || file.size === 0) throw new HttpError(400, "No recording was attached.", "invalid");
     if (file.size > MAX_BYTES) throw new HttpError(413, "Recordings for dictation must be under 5 MB.", "too_large");

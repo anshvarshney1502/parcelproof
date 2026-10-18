@@ -9,7 +9,7 @@ export async function GET() {
   return handle(async () => {
     const userId = await requireUserId();
     const { language, voiceStyle } = await getSettings(userId);
-    return json({ settings: { language, voiceStyle }, usage: await usageToday(userId), limits: { ai: limits.aiDailyLimit, tts: limits.ttsDailyLimit } });
+    return json({ settings: { language, voiceStyle }, usage: await usageToday(userId), limits: { ai: limits.aiDailyLimit, tts: limits.ttsDailyLimit, stt: limits.sttDailyLimit } });
   });
 }
 

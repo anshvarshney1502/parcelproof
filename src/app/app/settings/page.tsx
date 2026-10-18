@@ -63,6 +63,7 @@ export default async function SettingsPage() {
           <div className="space-y-4">
             {meter("Evidence analyses today", usage.ai, limits.aiDailyLimit)}
             {meter("Voice generations today", usage.tts, limits.ttsDailyLimit)}
+            {meter("Voice-note transcriptions today", usage.stt, limits.sttDailyLimit)}
             {meter("Evidence storage", used, limits.maxUserStorageBytes, fmtBytes)}
           </div>
         </Section>
@@ -71,7 +72,8 @@ export default async function SettingsPage() {
           <ul className="space-y-2 text-sm">
             {[
               [st.gemma, `Gemma analysis (${st.gemmaModel}) via Google Gemini API`],
-              [st.voice, "ElevenLabs voice briefings"],
+              [st.voice, "ElevenLabs voice briefings (text-to-speech)"],
+              [st.voice, "ElevenLabs Scribe voice-note transcription"],
               [st.mongo, "MongoDB Atlas storage"],
             ].map(([ok, label]) => (
               <li key={label as string} className="flex items-center gap-2">
@@ -86,7 +88,8 @@ export default async function SettingsPage() {
           <ul className="list-disc space-y-1.5 pl-5 text-sm text-ink-2">
             <li>Files and extracted text are stored in this app’s MongoDB Atlas database and are only served to you.</li>
             <li>When you analyse a case, extracted text is sent to Google’s hosted Gemma API.</li>
-            <li>When you generate audio, the briefing transcript is sent to ElevenLabs.</li>
+            <li>When you add a voice note or dictate, the recording is sent to ElevenLabs Scribe for transcription.</li>
+            <li>When you generate audio, the briefing script is sent to ElevenLabs.</li>
             <li>Deleting a case removes its files, analyses and audio.</li>
           </ul>
         </Section>

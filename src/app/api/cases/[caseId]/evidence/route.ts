@@ -2,6 +2,7 @@ import { handle, json, sameOrigin, HttpError } from "@/lib/http";
 import { requireUserId } from "@/lib/session";
 import { id } from "@/lib/schemas";
 import { limits } from "@/lib/env";
+import { readFormLimited } from "@/lib/stream";
 import { getOwnedCase } from "@/lib/repo/cases";
 import { listEvidence, uploadEvidence } from "@/lib/repo/evidence";
 
@@ -22,15 +23,8 @@ export async function POST(req: Request, ctx: RouteContext<"/api/cases/[caseId]/
     sameOrigin(req);
     const userId = await requireUserId();
     const caseId = id.parse((await ctx.params).caseId);
-    // Reject oversized bodies before buffering them.
-    const declared = Number(req.headers.get("content-length") ?? 0);
-    if (declared > limits.maxUploadBytes + 512 * 1024) throw new HttpError(413, `Files must be ${Math.round(limits.maxUploadBytes / 1048576)} MB or smaller.`, "too_large");
-    let form: FormData;
-    try {
-      form = await req.formData();
-    } catch {
-      throw new HttpError(400, "Expected a multipart upload.", "invalid");
-    }
+    // The cap is enforced while reading, so chunked uploads without Content-Length can't exhaust memory.
+    const form = await readFormLimited(req, limits.maxUploadBytes + 64 * 1024, `Files must be ${Math.round(limits.maxUploadBytes / 1048576)} MB or smaller.`);
     const file = form.get("file");
     if (!(file instanceof File)) throw new HttpError(400, "No file was attached.", "invalid");
     if (file.size > limits.maxUploadBytes) throw new HttpError(413, `Files must be ${Math.round(limits.maxUploadBytes / 1048576)} MB or smaller.`, "too_large");

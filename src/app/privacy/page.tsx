@@ -19,7 +19,7 @@ export default function Privacy() {
         <h2>Who else receives data</h2>
         <ul>
           <li><strong>Google (Gemini API, Gemma model):</strong> when you choose “Analyse evidence”, the extracted text of that case’s evidence and the case details are sent to Google’s hosted API. Processing is not local or offline.</li>
-          <li><strong>ElevenLabs:</strong> when you generate audio, the briefing transcript is sent to ElevenLabs. Your files are not.</li>
+          <li><strong>ElevenLabs:</strong> voice notes you upload and recordings you dictate are sent to ElevenLabs Scribe for transcription; when you generate a briefing, its script is sent for speech synthesis. Other files are not sent to ElevenLabs.</li>
           <li><strong>Hosting:</strong> the app runs on Render; data is stored on MongoDB Atlas.</li>
           <li>Text recognition (OCR) and PDF reading run on the ParcelProof server. OCR language data is downloaded from a public CDN.</li>
         </ul>

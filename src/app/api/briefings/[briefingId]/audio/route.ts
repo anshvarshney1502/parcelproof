@@ -4,9 +4,10 @@ import { requireUserId } from "@/lib/session";
 import { id } from "@/lib/schemas";
 import { collections } from "@/lib/db";
 import { getOwnedBriefing } from "@/lib/repo/briefing";
+import { parseRange } from "@/lib/stream";
 
-/** Owner-only audio. Buffered so the browser gets a Content-Length and can seek. */
-export async function GET(_req: Request, ctx: RouteContext<"/api/briefings/[briefingId]/audio">) {
+/** Owner-only audio with byte-range support (required by Safari/iOS for playback and seeking). */
+export async function GET(req: Request, ctx: RouteContext<"/api/briefings/[briefingId]/audio">) {
   return handle(async () => {
     const userId = await requireUserId();
     const b = await getOwnedBriefing(userId, id.parse((await ctx.params).briefingId));
@@ -15,8 +16,17 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/briefings/[brie
     const chunks: Buffer[] = [];
     for await (const c of audio.openDownloadStream(new ObjectId(b.gridfsId))) chunks.push(c as Buffer);
     const buf = Buffer.concat(chunks);
-    return new Response(new Uint8Array(buf), {
-      headers: { "Content-Type": "audio/mpeg", "Content-Length": String(buf.byteLength), "Cache-Control": "private, max-age=3600", "Accept-Ranges": "none" },
+    const range = parseRange(req.headers.get("range"), buf.byteLength);
+    const body = range ? buf.subarray(range.start, range.end + 1) : buf;
+    return new Response(new Uint8Array(body), {
+      status: range ? 206 : 200,
+      headers: {
+        "Content-Type": "audio/mpeg",
+        "Content-Length": String(body.byteLength),
+        "Accept-Ranges": "bytes",
+        ...(range ? { "Content-Range": `bytes ${range.start}-${range.end}/${buf.byteLength}` } : {}),
+        "Cache-Control": "private, max-age=3600",
+      },
     });
   });
 }
