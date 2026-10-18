@@ -17,14 +17,16 @@
   <img alt="ElevenLabs" src="https://img.shields.io/badge/voice-ElevenLabs%20Scribe%20%2B%20TTS-B9563C?style=flat-square">
   <img alt="MongoDB Atlas" src="https://img.shields.io/badge/data-MongoDB%20Atlas%20%2B%20GridFS-747B61?style=flat-square">
   <img alt="Render" src="https://img.shields.io/badge/deployed%20on-Render-62665F?style=flat-square">
-  <img alt="Tests" src="https://img.shields.io/badge/tests-51%20passing-3E6B48?style=flat-square">
+  <a href="https://github.com/anshvarshney1502/parcelproof/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/anshvarshney1502/parcelproof/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="npm audit" src="https://img.shields.io/badge/npm%20audit-0%20vulnerabilities-3E6B48?style=flat-square">
 </p>
 
 <p align="center">
-  <a href="docs/demo/ParcelProof-story-720p.mp4"><img src="docs/demo/ParcelProof-poster.jpg" alt="Watch the 90-second ParcelProof film" width="720" /></a>
-  <br />
-  <sub>▶ <a href="docs/demo/ParcelProof-story-720p.mp4"><b>Watch the 90-second film</b></a> · 720p · narrated with ElevenLabs</sub>
+  <a href="https://parcelproof-2yw4.onrender.com/demo/parcelproof-story.mp4"><img src="docs/demo/preview.gif" alt="ParcelProof in 25 seconds: a voice note becomes a sourced case, then a spoken briefing" width="720" /></a>
+</p>
+<p align="center">
+  <a href="https://parcelproof-2yw4.onrender.com/demo/parcelproof-story.mp4"><b>▶ Watch the full 90-second film</b></a> (720p, narrated with ElevenLabs) ·
+  <a href="https://github.com/anshvarshney1502/parcelproof/releases/latest">Download</a>
 </p>
 
 ---
