@@ -1,4 +1,4 @@
-import { GoogleGenAI, ApiError } from "@google/genai";
+import { GoogleGenAI, ApiError, ThinkingLevel } from "@google/genai";
 import { config } from "../env";
 
 export class ModelError extends Error {
@@ -26,7 +26,8 @@ export function gemmaClient(): ModelClient {
         const res = await ai.models.generateContent({
           model: modelId,
           contents: prompt,
-          config: { temperature: 0.1, maxOutputTokens: 8192 },
+          // Gemma 4 thinks by default; that consumes the output budget and makes long prompts time out (HTTP 504).
+          config: { temperature: 0.1, maxOutputTokens: 8192, thinkingConfig: { thinkingLevel: ThinkingLevel.MINIMAL } },
         });
         const text = res.text;
         if (!text) throw new ModelError("The model returned an empty response.", "bad_output", true);
