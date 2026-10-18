@@ -4,7 +4,7 @@
 
 <p align="center">
   <a href="https://parcelproof-2yw4.onrender.com"><b>Live app</b></a> ·
-  <a href="#-the-90-second-story">The story</a> ·
+  <a href="#-the-problem">The problem</a> ·
   <a href="#-how-it-works">How it works</a> ·
   <a href="#-trust-model">Trust model</a> ·
   <a href="#-security">Security</a> ·
@@ -22,32 +22,30 @@
 </p>
 
 <p align="center">
-  <a href="https://parcelproof-2yw4.onrender.com/demo/parcelproof-story.mp4"><img src="docs/demo/preview.gif" alt="ParcelProof in 25 seconds: a voice note becomes a sourced case, then a spoken briefing" width="720" /></a>
+  <a href="https://parcelproof-2yw4.onrender.com/demo/parcelproof-story.mp4"><img src="docs/demo/preview.gif" alt="ParcelProof walkthrough: a voice note becomes a sourced case, then a spoken briefing" width="720" /></a>
 </p>
 <p align="center">
-  <a href="https://parcelproof-2yw4.onrender.com/demo/parcelproof-story.mp4"><b>▶ Watch the full 90-second film</b></a> (720p, narrated with ElevenLabs) ·
+  <a href="https://parcelproof-2yw4.onrender.com/demo/parcelproof-story.mp4"><b>▶ Watch the product walkthrough</b></a> (720p, narrated with ElevenLabs) ·
   <a href="https://github.com/anshvarshney1502/parcelproof/releases/latest">Download</a>
 </p>
 
 ---
 
-## ✦ The 90-second story
+## ✦ The problem
 
-Riya sells Bluetooth speakers on Meesho from her flat in Jaipur. On Tuesday a customer opens a dispute: **“the box was empty.”** She has three days to respond.
+Small online sellers lose disputes they could have won. A customer reports an empty box or a missing item, the marketplace gives the seller a few days to respond, and the proof is spread across a courier tracking page, an invoice, photos on a phone and, more and more often, a WhatsApp voice note in Hindi or Hinglish.
 
-Her evidence is everywhere — a Delhivery tracking page, an invoice PDF, a packing photo somewhere in her gallery, and a 12-second **WhatsApp voice note** from the customer, half in Hindi. She can refund and eat the loss, or spend an evening assembling screenshots that a marketplace reviewer will skim in thirty seconds.
+Pulling that together takes an evening, and the result is usually a pile of screenshots a reviewer will barely read. Many sellers just refund instead.
 
-**ParcelProof gives her a third option.**
+## ✦ How it works for a seller
 
-1. She drops everything into a case — including the voice note. **ElevenLabs Scribe** transcribes it with speakers and timestamps.
-2. **Gemma**, an open-weight model, runs inside a **Mastra** workflow and lists what each record actually shows. Every finding must quote her files *word for word* — and code, not the model, checks that the quote exists.
-3. She confirms the findings she agrees with. One is marked **conflicting**: the courier logged a signed delivery at 1.2 kg; the customer says the box was empty.
-4. She taps **Listen to my case**. In 45 seconds of calm Hinglish, ParcelProof tells her what's supported, what's only claimed, and what's missing — the transcript highlighting as it speaks.
-5. She downloads a PDF with every quotation, source id and correction, and sends it.
+1. **Create a case** and add the evidence: PDFs, screenshots, CSV exports and audio. Voice notes are transcribed by **ElevenLabs Scribe**, with speaker labels and timestamps, so they can be quoted like any other document.
+2. **Run the analysis.** **Gemma**, an open-weight model, runs inside a **Mastra** workflow and lists the events and findings in the evidence. Each finding has to quote the source files exactly, and the server checks every quote before it is shown.
+3. **Review the findings.** Each one is marked supported, conflicting, unverified or missing. The seller confirms, corrects or dismisses them. Nothing goes into the report without that review.
+4. **Listen to the briefing.** Gemma writes a short summary of the confirmed findings and ElevenLabs reads it out in English or Hinglish. The transcript highlights as it plays.
+5. **Export the report** as a PDF with the timeline, quotations, source references, corrections and an editable draft reply.
 
-Five minutes. No invented tracking events. No one called a liar.
-
-<sub>Riya is an illustrative persona; the flow above is exactly what the live app does.</sub>
+A typical case takes a few minutes instead of an evening, and the report only contains what the evidence and the seller actually support.
 
 ---
 
