@@ -59,7 +59,8 @@ See `.env.example`. Everything is server-only; nothing uses `NEXT_PUBLIC_`.
 | `AUTH_TRUST_HOST=true` | Needed behind Render's proxy. |
 | `MONGODB_URI`, `MONGODB_DB_NAME` | Atlas connection. |
 | `GEMMA_API_KEY`, `GEMMA_MODEL_ID` | Gemini API key and Gemma model (default `gemma-4-26b-a4b-it`). The app refuses non-`gemma-` model IDs. |
-| `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID` | Voice. Use a voice ID from *your* ElevenLabs voice library. |
+| `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID` | Voice. `ELEVENLABS_VOICE_ID` is the English/default voice; use a voice in *your* ElevenLabs library. |
+| `ELEVENLABS_VOICE_ID_HINGLISH` | Optional separate voice for Hinglish briefings. |
 | `MAX_UPLOAD_MB`, `MAX_EVIDENCE_PER_CASE`, `MAX_USER_STORAGE_MB` | Upload limits (10 / 10 / 100 by default). |
 | `AI_DAILY_LIMIT`, `TTS_DAILY_LIMIT` | Per-user daily limits (8 / 3). |
 | `AI_MAX_INPUT_CHARS` | Max evidence characters sent per analysis (60 000). |

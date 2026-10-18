@@ -25,6 +25,11 @@ function need(service: string, names: string[]) {
   return names.map((n) => process.env[n] as string);
 }
 
+/** English uses ELEVENLABS_VOICE_ID; Hinglish uses ELEVENLABS_VOICE_ID_HINGLISH when set. */
+export function voiceFor(language: "en" | "hinglish") {
+  return (language === "hinglish" && process.env.ELEVENLABS_VOICE_ID_HINGLISH) || process.env.ELEVENLABS_VOICE_ID || "";
+}
+
 export const config = {
   mongo() {
     const [uri] = need("MongoDB", ["MONGODB_URI"]);
@@ -34,9 +39,9 @@ export const config = {
     const [apiKey] = need("Gemma (Gemini API)", ["GEMMA_API_KEY"]);
     return { apiKey, modelId: process.env.GEMMA_MODEL_ID || "gemma-4-26b-a4b-it" };
   },
-  elevenlabs() {
-    const [apiKey, voiceId] = need("ElevenLabs", ["ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID"]);
-    return { apiKey, voiceId, modelId: process.env.ELEVENLABS_MODEL_ID || "eleven_multilingual_v2" };
+  elevenlabs(language: "en" | "hinglish" = "en") {
+    const [apiKey] = need("ElevenLabs", ["ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID"]);
+    return { apiKey, voiceId: voiceFor(language), modelId: process.env.ELEVENLABS_MODEL_ID || "eleven_multilingual_v2" };
   },
   /** Non-throwing status for the settings page. Never exposes values. */
   status() {

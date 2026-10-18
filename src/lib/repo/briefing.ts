@@ -1,7 +1,7 @@
 import { Readable } from "node:stream";
 import { ObjectId } from "mongodb";
 import { collections } from "../db";
-import { ConfigError, limits } from "../env";
+import { ConfigError, limits, voiceFor } from "../env";
 import { HttpError, notFound } from "../http";
 import { newId, sha256 } from "../ids";
 import { buildBriefingText, reviewedFindings } from "../voice/briefing-text";
@@ -34,7 +34,7 @@ export async function previewBriefing(ownerId: string, caseId: string, language?
   const pending = current.findings.filter((f) => f.review === "pending").length;
   const reviewed = reviewedFindings(current).length;
   const text = buildBriefingText(kase, current, lang);
-  const voice = process.env.ELEVENLABS_VOICE_ID ?? "";
+  const voice = voiceFor(lang);
   const modelId = process.env.ELEVENLABS_MODEL_ID || "eleven_multilingual_v2";
   const cacheKey = briefingCacheKey({ ownerId, textHash: sha256(text), voiceId: voice, modelId, language: lang, voiceStyle: settings.voiceStyle });
   const { briefings } = await collections();
@@ -64,7 +64,7 @@ export async function generateBriefing(ownerId: string, caseId: string, language
 
   let client: TtsClient;
   try {
-    client = tts ?? elevenLabsClient();
+    client = tts ?? elevenLabsClient(p.language);
   } catch (e) {
     if (e instanceof ConfigError) throw new HttpError(503, `${e.message} The text briefing is still available.`, "not_configured");
     throw e;

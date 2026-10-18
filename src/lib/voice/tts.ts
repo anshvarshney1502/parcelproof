@@ -18,8 +18,8 @@ export const VOICE_SETTINGS = {
   balanced: { stability: 0.5, similarityBoost: 0.75, style: 0.15, speed: 1 },
 } as const;
 
-export function elevenLabsClient(): TtsClient {
-  const { apiKey, voiceId, modelId } = config.elevenlabs();
+export function elevenLabsClient(language: "en" | "hinglish" = "en"): TtsClient {
+  const { apiKey, voiceId, modelId } = config.elevenlabs(language);
   const client = new ElevenLabsClient({ apiKey, timeoutInSeconds: 90, maxRetries: 0 });
   return {
     voiceId,
@@ -55,7 +55,7 @@ export function toVoiceError(e: unknown): VoiceError {
     const s = e.statusCode ?? 502;
     if (s === 401) return new VoiceError("ElevenLabs rejected the API key.", 502);
     if (s === 402 || s === 429) return new VoiceError("ElevenLabs credits or rate limit are exhausted for this account. The text briefing is still available.", 429);
-    if (s === 404 || s === 400 || s === 422) return new VoiceError("ElevenLabs rejected the request. Check that ELEVENLABS_VOICE_ID is a voice available to this account.", 502);
+    if (s === 404 || s === 400 || s === 422) return new VoiceError("ElevenLabs rejected the request. Check that the configured voice ID (ELEVENLABS_VOICE_ID / ELEVENLABS_VOICE_ID_HINGLISH) is a voice available to this account.", 502);
     return new VoiceError(`ElevenLabs had an error (HTTP ${s}).`, 502);
   }
   return new VoiceError("Could not reach ElevenLabs. Try again shortly.", 502);
