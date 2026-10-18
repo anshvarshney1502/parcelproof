@@ -21,6 +21,8 @@ export type CaseDoc = {
   resolvedAt?: Date | null;
   sourceCounter: number;
   appealDraft?: string;
+  /** Spoken briefing scripts, per language. basisHash ties a script to the reviewed findings it was written from. */
+  briefingScripts?: Partial<Record<"en" | "hinglish", { text: string; basisHash: string; origin: "gemma" | "seller"; createdAt: Date }>>;
   /** Denormalised from the latest analysis so the dashboard can filter cheaply. */
   pendingReview: number;
   createdAt: Date;
@@ -36,7 +38,7 @@ export type EvidenceDoc = {
   sourceId: string;
   filename: string;
   mime: string;
-  kind: "pdf" | "image" | "text" | "csv";
+  kind: "pdf" | "image" | "text" | "csv" | "audio";
   sha256: string;
   size: number;
   uploadedAt: Date;
@@ -45,7 +47,9 @@ export type EvidenceDoc = {
   error?: string;
   warnings?: string[];
   pageCount?: number;
-  method?: "text" | "pdf-text" | "ocr" | "pdf-ocr" | "mixed";
+  method?: "text" | "pdf-text" | "ocr" | "pdf-ocr" | "mixed" | "speech";
+  /** Audio only: detected language and duration from ElevenLabs Scribe. */
+  audio?: { languageCode?: string; durationSec?: number; speakers?: number };
   pages: PageText[];
   /** Original machine extraction kept when the seller corrects text. */
   originalPages?: PageText[];
@@ -139,11 +143,13 @@ export type BriefingDoc = {
   voiceStyle: "calm" | "balanced";
   status: "generating" | "ready" | "failed";
   gridfsId?: string;
+  alignment?: { characters: string[]; starts: number[] };
+  scriptOrigin?: "template" | "gemma" | "seller";
   characters: number;
   error?: string;
   createdAt: Date;
 };
 
-export type UsageDoc = { _id?: unknown; ownerId: string; kind: "ai" | "tts" | "upload"; day: string; count: number };
+export type UsageDoc = { _id?: unknown; ownerId: string; kind: "ai" | "tts" | "stt" | "upload"; day: string; count: number };
 export type AuditDoc = { _id?: unknown; ownerId: string; action: string; targetId?: string; at: Date };
 export type SettingsDoc = { _id?: unknown; ownerId: string; language: "en" | "hinglish"; voiceStyle: "calm" | "balanced" };

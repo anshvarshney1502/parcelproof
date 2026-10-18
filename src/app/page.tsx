@@ -27,7 +27,7 @@ export default async function Home() {
               <span className="italic text-rust-ink">Every piece of evidence</span> needs context.
             </h1>
             <p className="mt-6 max-w-[34rem] text-[1.0625rem] leading-relaxed text-ink-2">
-              ParcelProof turns the invoice, tracking page, customer messages and packing photos behind a disputed order into one organised case — with every finding tied to the exact line it came from, and every uncertainty left visible.
+              Drop in the tracking page, the invoice and the customer’s WhatsApp voice note. ParcelProof transcribes what was said, lines it up against the records, ties every finding to the exact words it came from — and then tells you, out loud, in English or Hinglish, where your case stands.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <Link href={isIn ? "/app" : "/sign-in"} className="group inline-flex h-12 items-center gap-2 rounded-[var(--radius-mark)] bg-ink px-5 text-paper hover:bg-[#363c35]">
@@ -45,10 +45,10 @@ export default async function Home() {
             <h2 id="how-h" className="label">How a case comes together</h2>
             <ol className="mt-8 grid gap-10 md:grid-cols-4">
               {[
-                ["Collect", "Upload PDFs, screenshots, chats and spreadsheets. Each file gets a permanent source id."],
-                ["Read", "Text is extracted — including OCR for scans — and shown to you to check and correct."],
-                ["Compare", "An open-weight Gemma model lists events and findings. Every quotation is verified against your files."],
-                ["Decide", "You confirm, correct or dismiss each finding, listen to a spoken briefing, and export a report."],
+                ["Talk it in", "Upload PDFs, screenshots and voice notes, or just record one. ElevenLabs Scribe transcribes Hindi, English and Hinglish with speakers and timestamps."],
+                ["Check the facts", "Open-weight Gemma, run as a Mastra workflow, lists events and findings. Every quotation is verified against your files — nothing unquoted gets through."],
+                ["Decide", "Confirm, correct or dismiss each finding. Supported, conflicting, unverified and missing stay clearly apart."],
+                ["Hear it back", "Gemma writes a 45-second briefing from what you confirmed; ElevenLabs reads it with a transcript that follows the voice. Then export the PDF."],
               ].map(([t, d], i) => (
                 <li key={t} className="relative">
                   <span className="font-mono text-micro text-rust-ink">{String(i + 1).padStart(2, "0")}</span>

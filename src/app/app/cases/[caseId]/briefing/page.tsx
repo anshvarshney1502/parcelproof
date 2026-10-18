@@ -26,6 +26,9 @@ export default async function BriefingPage({ params, searchParams }: PageProps<"
       caseId={caseId}
       language={p.language}
       text={p.text}
+      scriptOrigin={p.scriptOrigin}
+      scriptStale={p.scriptStale}
+      gemmaConfigured={config.status().gemma}
       characters={p.characters}
       pending={p.pending}
       reviewed={p.reviewed}

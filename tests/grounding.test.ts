@@ -129,3 +129,35 @@ describe("events and findings", () => {
     expect(contradictions).toEqual(["Weight differs between records"]);
   });
 });
+
+import { formatTranscript } from "@/lib/voice/stt";
+import { detectFile } from "@/lib/files/validate";
+
+describe("voice evidence", () => {
+  it("formats Scribe words into timestamped speaker turns", () => {
+    const words = [
+      { text: "Hello", start: 0.2, end: 0.5, type: "word", speakerId: "speaker_0" },
+      { text: " ", type: "spacing", speakerId: "speaker_0" },
+      { text: "seller.", start: 0.6, end: 1, type: "word", speakerId: "speaker_0" },
+      { text: "(laughs)", start: 1, end: 1.2, type: "audio_event" },
+      { text: "Box", start: 72.4, end: 72.8, type: "word", speakerId: "speaker_1" },
+      { text: " ", type: "spacing", speakerId: "speaker_1" },
+      { text: "khaali tha.", start: 72.9, end: 73.6, type: "word", speakerId: "speaker_1" },
+    ];
+    expect(formatTranscript(words)).toEqual({ text: "[00:00] Speaker 1: Hello seller.\n[01:12] Speaker 2: Box khaali tha.", speakers: 2 });
+  });
+  it("accepts common voice-note formats and rejects mismatched extensions", () => {
+    const ogg = new TextEncoder().encode("OggS\0\0\0\0rest");
+    expect(detectFile(ogg, "PTT-20260914.opus")).toEqual({ kind: "audio", mime: "audio/ogg" });
+    const m4a = new Uint8Array([0, 0, 0, 0x20, ...new TextEncoder().encode("ftypM4A ")]);
+    expect(detectFile(m4a, "call.m4a").kind).toBe("audio");
+    expect(() => detectFile(ogg, "note.mp3")).toThrow(/extension/);
+  });
+});
+
+import { sentenceSpans } from "@/components/app/synced-transcript";
+describe("briefing transcript", () => {
+  it("splits sentences without breaking decimals or initials", () => {
+    expect(sentenceSpans("Weight 1.2 kg tha. R. Kumar ne sign kiya! Theek hai?").map((s) => s.text)).toEqual(["Weight 1.2 kg tha.", "R. Kumar ne sign kiya!", "Theek hai?"]);
+  });
+});

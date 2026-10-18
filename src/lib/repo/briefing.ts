@@ -8,6 +8,8 @@ import { buildBriefingText, reviewedFindings } from "../voice/briefing-text";
 import { elevenLabsClient, VOICE_SETTINGS, VoiceError, type TtsClient } from "../voice/tts";
 import type { BriefingDoc, SettingsDoc } from "../types";
 import { analysisState } from "./analysis";
+import { scriptBasis, writeBriefingScript, ScriptRejected } from "../ai/briefing-script";
+import { gemmaClient, ModelError, type ModelClient } from "../ai/gemma";
 import { dropFile } from "./cases";
 import { audit, consume, refund } from "./usage";
 
@@ -33,7 +35,11 @@ export async function previewBriefing(ownerId: string, caseId: string, language?
   if (!current) return { ready: false as const, reason: "Run an analysis first.", language: lang };
   const pending = current.findings.filter((f) => f.review === "pending").length;
   const reviewed = reviewedFindings(current).length;
-  const text = buildBriefingText(kase, current, lang);
+  const basis = scriptBasis(kase, current);
+  const saved = kase.briefingScripts?.[lang];
+  const useSaved = Boolean(saved && saved.basisHash === basis.hash);
+  const text = useSaved ? saved!.text : buildBriefingText(kase, current, lang);
+  const scriptOrigin: "template" | "gemma" | "seller" = useSaved ? saved!.origin : "template";
   const voice = voiceFor(lang);
   const modelId = process.env.ELEVENLABS_MODEL_ID || "eleven_multilingual_v2";
   const cacheKey = briefingCacheKey({ ownerId, textHash: sha256(text), voiceId: voice, modelId, language: lang, voiceStyle: settings.voiceStyle });
@@ -45,6 +51,8 @@ export async function previewBriefing(ownerId: string, caseId: string, language?
     language: lang,
     voiceStyle: settings.voiceStyle,
     text,
+    scriptOrigin,
+    scriptStale: Boolean(saved && !useSaved),
     characters: text.length,
     pending,
     reviewed,
@@ -90,13 +98,17 @@ export async function generateBriefing(ownerId: string, caseId: string, language
     modelId: client.modelId,
     voiceStyle: settings.voiceStyle,
     status: "generating",
+    scriptOrigin: p.scriptOrigin,
     characters: p.text.length,
     createdAt: new Date(),
   };
   await briefings.insertOne(doc);
   let bytes: Uint8Array;
+  let alignment: BriefingDoc["alignment"];
   try {
-    bytes = await client.synthesize(p.text, settings.voiceStyle);
+    const res = await client.synthesize(p.text, settings.voiceStyle);
+    bytes = res.audio;
+    alignment = res.alignment;
   } catch (e) {
     const err = e instanceof VoiceError ? e : new VoiceError("Voice generation failed.", 502);
     await briefings.updateOne({ _id: doc._id }, { $set: { status: "failed", error: err.message } });
@@ -112,13 +124,13 @@ export async function generateBriefing(ownerId: string, caseId: string, language
   );
   // Older audio for this case is superseded; keep storage bounded.
   const old = await briefings.find({ ownerId, caseId, _id: { $ne: doc._id }, gridfsId: { $exists: true } }).toArray();
-  await briefings.updateOne({ _id: doc._id }, { $set: { status: "ready", gridfsId: gridfsId.toHexString() } });
+  await briefings.updateOne({ _id: doc._id }, { $set: { status: "ready", gridfsId: gridfsId.toHexString(), ...(alignment ? { alignment } : {}) } });
   for (const o of old.slice(2)) {
     await dropFile(audio, o.gridfsId!);
     await briefings.deleteOne({ _id: o._id });
   }
   await audit(ownerId, "briefing.generate", doc._id);
-  return { briefing: publicBriefing({ ...doc, status: "ready", gridfsId: gridfsId.toHexString() }), reused: false };
+  return { briefing: publicBriefing({ ...doc, status: "ready", gridfsId: gridfsId.toHexString(), alignment }), reused: false };
 }
 
 export async function getOwnedBriefing(ownerId: string, briefingId: string) {
@@ -136,5 +148,50 @@ export async function deleteBriefing(ownerId: string, briefingId: string) {
 }
 
 export function publicBriefing(b: BriefingDoc) {
-  return { id: b._id, status: b.status, language: b.language, text: b.text, characters: b.characters, createdAt: b.createdAt, voiceStyle: b.voiceStyle, error: b.error };
+  return { id: b._id, status: b.status, language: b.language, text: b.text, characters: b.characters, createdAt: b.createdAt, voiceStyle: b.voiceStyle, error: b.error, alignment: b.alignment, scriptOrigin: b.scriptOrigin ?? "template" };
+}
+
+/** Gemma drafts the spoken script from reviewed findings; the seller can then edit it. */
+export async function draftScript(ownerId: string, caseId: string, language: "en" | "hinglish", model?: ModelClient) {
+  const { kase, current } = await analysisState(ownerId, caseId);
+  if (!current) throw new HttpError(409, "Run an analysis first.", "no_analysis");
+  if (reviewedFindings(current).length === 0) throw new HttpError(409, "Confirm or correct at least one finding first.", "needs_review");
+  let client: ModelClient;
+  try {
+    client = model ?? gemmaClient();
+  } catch (e) {
+    if (e instanceof ModelError || e instanceof ConfigError) throw new HttpError(503, e.message, "not_configured");
+    throw e;
+  }
+  await consume(ownerId, "ai", limits.aiDailyLimit);
+  try {
+    const s = await writeBriefingScript(client, kase, current, language);
+    await storeScript(ownerId, caseId, language, s.text, s.basisHash, "gemma");
+    return s.text;
+  } catch (e) {
+    if (e instanceof ScriptRejected) throw new HttpError(422, `${e.message} Nothing was saved — try again or edit the script yourself.`, "rejected");
+    if (e instanceof ModelError) {
+      if (!e.transient) await refund(ownerId, "ai");
+      throw new HttpError(502, e.message, "model_failed");
+    }
+    throw e;
+  }
+}
+
+/** Seller-edited script. Tied to the current reviewed findings so later changes mark it stale. */
+export async function saveScript(ownerId: string, caseId: string, language: "en" | "hinglish", text: string) {
+  const { kase, current } = await analysisState(ownerId, caseId);
+  if (!current) throw new HttpError(409, "Run an analysis first.", "no_analysis");
+  await storeScript(ownerId, caseId, language, text.replace(/\s+/g, " ").trim(), scriptBasis(kase, current).hash, "seller");
+}
+
+export async function resetScript(ownerId: string, caseId: string, language: "en" | "hinglish") {
+  const { cases } = await collections();
+  await cases.updateOne({ _id: caseId, ownerId }, { $unset: { [`briefingScripts.${language}`]: "" }, $set: { updatedAt: new Date() } });
+}
+
+async function storeScript(ownerId: string, caseId: string, language: "en" | "hinglish", text: string, basisHash: string, origin: "gemma" | "seller") {
+  const { cases } = await collections();
+  const res = await cases.updateOne({ _id: caseId, ownerId }, { $set: { [`briefingScripts.${language}`]: { text, basisHash, origin, createdAt: new Date() }, updatedAt: new Date() } });
+  if (!res.matchedCount) throw notFound();
 }

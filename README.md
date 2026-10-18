@@ -2,6 +2,8 @@
 
 *Every claim needs evidence. Every piece of evidence needs context.*
 
+**Voice in, voice out.** Sellers drop in a customer's WhatsApp voice note or record their own; ElevenLabs Scribe turns it into timestamped, speaker-labelled, quotable evidence. When the review is done, Gemma writes a short English or Hinglish briefing from the confirmed findings and ElevenLabs reads it back, with a transcript that highlights in sync.
+
 ParcelProof is an evidence-first workspace for independent online sellers preparing delivery disputes, damaged-parcel claims, missing-item complaints and return mismatches. A seller collects the invoice, tracking record, customer messages and photos into a case. ParcelProof extracts their text, runs a Gemma-based analysis orchestrated by Mastra, **verifies every quotation against the original files**, lets the seller confirm, correct or dismiss each finding, reads a spoken briefing via ElevenLabs, and exports a reviewed PDF report.
 
 It does not decide who is lying, detect fraud, give legal advice or guarantee refunds.
@@ -15,6 +17,12 @@ It does not decide who is lying, detect fraud, give legal advice or guarantee re
 | Google sign-in (Auth.js v5 + MongoDB adapter, database sessions) | Implemented. Session lookup, route protection and ownership checks verified locally. The Google OAuth round-trip itself needs your OAuth credentials and was **not** exercised. |
 | Cases: create, edit, archive, restore, resolve, reopen, delete, search, filter, sort | Implemented and verified (tests + browser). |
 | Evidence upload → GridFS, SHA-256 dedupe, magic-byte checks, limits | Implemented and verified (tests + browser). |
+| Voice-note evidence (MP3, M4A, OGG/Opus, WAV, WebM) and in-browser recording → ElevenLabs Scribe (`scribe_v2`, diarised, word timestamps) | Verified live: a Hinglish voice note transcribed in ~2 s and was cited by Gemma findings. |
+| Dictation of the case description (Scribe, nothing stored) | Implemented. |
+| Gemma-written briefing script (English / Hinglish) from confirmed findings, with invented-number and accusation checks; seller can edit | Verified live. |
+| ElevenLabs timestamped TTS → transcript highlights in sync, tap a sentence to seek | Verified live (663/663 characters aligned). |
+| One-click confirm of clean "supported" findings | Implemented and tested. |
+| Devanagari text in PDF reports (Noto Serif Devanagari) | Verified. |
 | Text / CSV / PDF extraction, OCR for images and scanned PDF pages | Implemented. Text, CSV, PDF text and OCR-failure paths covered by tests. |
 | Seller text correction, retry, inspect original | Implemented. |
 | Mastra workflow → Gemma → schema validation → quotation grounding → persistence | Implemented and verified end-to-end **with a test double for the model**. A live call to `gemma-4-26b-a4b-it` needs `GEMMA_API_KEY` and was **not** exercised. |
@@ -63,7 +71,7 @@ See `.env.example`. Everything is server-only; nothing uses `NEXT_PUBLIC_`.
 | `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID` | Voice. `ELEVENLABS_VOICE_ID` is the English/default voice; use a voice in *your* ElevenLabs library. |
 | `ELEVENLABS_VOICE_ID_HINGLISH` | Optional separate voice for Hinglish briefings. |
 | `MAX_UPLOAD_MB`, `MAX_EVIDENCE_PER_CASE`, `MAX_USER_STORAGE_MB` | Upload limits (10 / 10 / 100 by default). |
-| `AI_DAILY_LIMIT`, `TTS_DAILY_LIMIT` | Per-user daily limits (8 / 3). |
+| `AI_DAILY_LIMIT`, `TTS_DAILY_LIMIT`, `STT_DAILY_LIMIT` | Per-user daily limits (8 analyses+scripts / 3 voice generations / 15 transcriptions). |
 | `AI_MAX_INPUT_CHARS` | Max evidence characters sent per analysis (60 000). |
 
 ### Google OAuth
@@ -146,7 +154,7 @@ Cache key = hash(owner, transcript hash, voice ID, model ID, language, voice set
 
 ## Known limitations
 
-- The PDF uses built-in PDF fonts (WinAnsi), so non-Latin scripts (e.g. Devanagari) in quotations will not render correctly in the PDF; the web UI is unaffected.
+- PDFs render Latin and Devanagari; other scripts (e.g. Tamil, Bengali) are not yet embedded.
 - OCR is English-only (`eng`), capped at 8 scanned pages per PDF and 60 s per page; PDFs are capped at 50 pages.
 - Gemma's free tier has low rate limits; heavy cases may hit `429`, which is shown as-is.
 - The audio route returns the full file (no HTTP range requests); briefings are small, so seeking works after load.

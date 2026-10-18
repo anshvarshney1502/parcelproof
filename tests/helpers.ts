@@ -46,7 +46,7 @@ export function fakeTts(fail?: Error): TtsClient & { calls: number } {
     async synthesize() {
       t.calls++;
       if (fail) throw fail;
-      return new Uint8Array([0xff, 0xfb, 0x90, 0x00, 1, 2, 3, 4]);
+      return { audio: new Uint8Array([0xff, 0xfb, 0x90, 0x00, 1, 2, 3, 4]), alignment: { characters: ["H", "i"], starts: [0, 0.1] } };
     },
   };
   return t;

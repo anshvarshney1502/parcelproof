@@ -1,12 +1,14 @@
 import os from "node:os";
 import Papa from "papaparse";
 import type { EvidenceDoc, PageText } from "../types";
+import type { Transcriber } from "../voice/stt";
 
 export type Extraction = {
   pages: PageText[];
   pageCount: number;
   method: NonNullable<EvidenceDoc["method"]>;
   warnings: string[];
+  audio?: EvidenceDoc["audio"];
 };
 
 export class ExtractionFailed extends Error {}
@@ -16,9 +18,19 @@ const MAX_PDF_PAGES = 50;
 const MAX_OCR_PAGES = 8;
 const OCR_TIMEOUT_MS = 60_000;
 
-export async function extractText(kind: EvidenceDoc["kind"], bytes: Uint8Array): Promise<Extraction> {
+export async function extractText(kind: EvidenceDoc["kind"], bytes: Uint8Array, audio?: { transcriber: Transcriber; filename: string; mime: string }): Promise<Extraction> {
   let result: Extraction;
-  if (kind === "text") result = { pages: [{ page: 1, text: decode(bytes) }], pageCount: 1, method: "text", warnings: [] };
+  if (kind === "audio") {
+    if (!audio) throw new ExtractionFailed("Voice transcription is not available.");
+    const t = await audio.transcriber.transcribe(bytes, audio.filename, audio.mime);
+    result = {
+      pages: [{ page: 1, text: t.text }],
+      pageCount: 1,
+      method: "speech",
+      warnings: [],
+      audio: { languageCode: t.languageCode, durationSec: t.durationSec, speakers: t.speakers },
+    };
+  } else if (kind === "text") result = { pages: [{ page: 1, text: decode(bytes) }], pageCount: 1, method: "text", warnings: [] };
   else if (kind === "csv") result = { pages: [{ page: 1, text: csvToText(decode(bytes)) }], pageCount: 1, method: "text", warnings: [] };
   else if (kind === "image") result = { pages: [{ page: 1, text: await ocr(bytes) }], pageCount: 1, method: "ocr", warnings: [] };
   else result = await extractPdf(bytes);
@@ -31,7 +43,9 @@ export async function extractText(kind: EvidenceDoc["kind"], bytes: Uint8Array):
   if (budget <= 0) result.warnings.push(`Text was truncated to ${MAX_CHARS.toLocaleString()} characters.`);
   if (!result.pages.some((p) => p.text.length >= 3)) {
     throw new ExtractionFailed(
-      kind === "image" || result.method !== "pdf-text"
+      kind === "audio"
+        ? "No speech was recognised in this recording. You can type what was said manually."
+        : kind === "image" || result.method !== "pdf-text"
         ? "No readable text was found. The image may be blurry, rotated, or contain no text. You can type the relevant text manually."
         : "No readable text was found in this document.",
     );

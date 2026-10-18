@@ -11,6 +11,9 @@ import { VoiceError } from "@/lib/voice/tts";
 import { reportContent } from "@/lib/report/content";
 import { renderReportPdf } from "@/lib/report/pdf";
 import { HttpError } from "@/lib/http";
+import { confirmAllSupported } from "@/lib/repo/analysis";
+import { draftScript } from "@/lib/repo/briefing";
+import type { Transcriber } from "@/lib/voice/stt";
 import { CUSTOMER_MSG, TRACKING_TXT, enc, fakeModel, fakeTts, resetDb, startDb, stopDb } from "./helpers";
 
 const ALICE = "aaaaaaaaaaaaaaaaaaaaaaaa";
@@ -334,3 +337,53 @@ function makePdf(pages: string[]): Promise<Uint8Array> {
     doc.end();
   });
 }
+
+describe("ElevenLabs voice features", () => {
+  const voiceNote = new Uint8Array([...new TextEncoder().encode("OggS"), 0, 2, 0, 0, 1, 2, 3, 4]);
+  const scribe = (text: string, fail?: Error): Transcriber & { calls: number } => {
+    const t = { calls: 0, async transcribe() { t.calls++; if (fail) throw fail; return { text, languageCode: "hin", durationSec: 14, speakers: 2 }; } };
+    return t;
+  };
+
+  it("transcribes a voice note into quotable evidence", async () => {
+    const c = await newCase();
+    const ev = await uploadEvidence(ALICE, c._id, "whatsapp.opus", voiceNote, { transcriber: scribe("[00:03] Speaker 1: Box khaali tha, sirf packing thi.") });
+    expect(ev.status).toBe("extracted");
+    expect(ev.method).toBe("speech");
+    expect(ev.audio).toEqual({ languageCode: "hin", durationSec: 14, speakers: 2 });
+    expect(ev.pages[0].text).toContain("Box khaali tha");
+  });
+
+  it("marks a failed transcription honestly and refunds the quota", async () => {
+    const c = await newCase();
+    const ev = await uploadEvidence(ALICE, c._id, "call.ogg", voiceNote, { transcriber: scribe("", new VoiceError("ElevenLabs credits or rate limit are exhausted for this account. The text briefing is still available.", 429)) });
+    expect(ev.status).toBe("failed");
+    expect(ev.pages).toEqual([]);
+    const { usage } = await collections();
+    expect((await usage.findOne({ ownerId: ALICE, kind: "stt" }))?.count).toBe(0);
+  });
+
+  it("confirms only clean supported findings in bulk", async () => {
+    const c = await caseWithEvidence();
+    await startAnalysis(ALICE, c._id, { model: fakeModel([EXTRACTION, COMPARISON]) });
+    expect(await confirmAllSupported(ALICE, c._id)).toBe(1);
+    const a = (await currentAnalysis(ALICE, c._id))!;
+    expect(a.findings.map((f) => f.review)).toEqual(["confirmed", "pending", "pending"]);
+  });
+
+  it("uses a Gemma-written script and rejects one with invented numbers", async () => {
+    const c = await reviewedCase();
+    const good = "Your case is about missing contents. The courier recorded the parcel as delivered and signed for on 13 September. The customer says the box was empty, but no photo has been provided yet, so that stays unverified. Ask for photos before you reply, and check everything before sending.";
+    await draftScript(ALICE, c._id, "en", fakeModel([JSON.stringify({ script: good })]));
+    const p = await previewBriefing(ALICE, c._id, "en");
+    expect(p.ready && p.scriptOrigin).toBe("gemma");
+    expect(p.ready && p.text).toBe(good);
+    const invented = good.replace("13 September", "13 September at 4 pm, 2 boxes");
+    const err = await draftScript(ALICE, c._id, "en", fakeModel([JSON.stringify({ script: invented })])).catch((e) => e);
+    expect(err.status).toBe(422);
+    expect(err.message).toMatch(/4, 2/);
+    const tts = fakeTts();
+    const b = await generateBriefing(ALICE, c._id, "en", tts);
+    expect(b.briefing.alignment?.starts).toEqual([0, 0.1]);
+  });
+});

@@ -160,3 +160,19 @@ export async function analysisHistory(ownerId: string, caseId: string) {
     .limit(20)
     .toArray();
 }
+
+/** Confirms every pending "supported" finding that passed validation cleanly. Others still need a human look. */
+export async function confirmAllSupported(ownerId: string, caseId: string) {
+  const { analyses } = await collections();
+  const current = await currentAnalysis(ownerId, caseId);
+  if (!current) throw notFound();
+  const ids = current.findings.filter((f) => f.review === "pending" && f.status === "supported" && !f.validationNotes.length).map((f) => f.id);
+  if (!ids.length) return 0;
+  const updated = await analyses.findOneAndUpdate(
+    { _id: current._id, ownerId },
+    { $set: { "findings.$[f].review": "confirmed", "findings.$[f].reviewedAt": new Date() } },
+    { arrayFilters: [{ "f.id": { $in: ids } }], returnDocument: "after" },
+  );
+  if (updated) await recountPending(ownerId, caseId, updated);
+  return ids.length;
+}

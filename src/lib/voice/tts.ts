@@ -10,8 +10,11 @@ export class VoiceError extends Error {
 export interface TtsClient {
   voiceId: string;
   modelId: string;
-  synthesize(text: string, style: "calm" | "balanced"): Promise<Uint8Array>;
+  /** Returns MP3 audio plus, when available, the start time of each character (for word-synced transcripts). */
+  synthesize(text: string, style: "calm" | "balanced"): Promise<{ audio: Uint8Array; alignment?: Alignment }>;
 }
+
+export type Alignment = { characters: string[]; starts: number[] };
 
 export const VOICE_SETTINGS = {
   calm: { stability: 0.7, similarityBoost: 0.75, style: 0, speed: 0.95 },
@@ -26,22 +29,16 @@ export function elevenLabsClient(language: "en" | "hinglish" = "en"): TtsClient 
     modelId,
     async synthesize(text, style) {
       try {
-        const stream = await client.textToSpeech.convert(voiceId, {
+        const res = await client.textToSpeech.convertWithTimestamps(voiceId, {
           text,
           modelId,
           outputFormat: "mp3_44100_128",
           voiceSettings: VOICE_SETTINGS[style],
         });
-        const chunks: Uint8Array[] = [];
-        const reader = stream.getReader();
-        for (;;) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          chunks.push(value);
-        }
-        const audio = Buffer.concat(chunks);
+        const audio = Buffer.from(res.audioBase64 ?? "", "base64");
         if (!audio.byteLength) throw new VoiceError("ElevenLabs returned no audio.", 502);
-        return audio;
+        const al = res.alignment ?? res.normalizedAlignment;
+        return { audio, alignment: al ? { characters: al.characters, starts: al.characterStartTimesSeconds } : undefined };
       } catch (e) {
         throw toVoiceError(e);
       }

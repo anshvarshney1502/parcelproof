@@ -53,11 +53,11 @@ export function EvidenceInspector({ ev, highlight }: { ev: Ev; highlight?: { pag
       <header className="border-b border-rule px-5 py-4">
         <div className="flex flex-wrap items-center gap-2">
           <span className="rounded-[var(--radius-mark)] bg-ink px-1.5 py-0.5 font-mono text-micro text-paper">{ev.sourceId}</span>
-          <ExtractionBadge status={ev.status} corrected={Boolean(ev.correctedAt)} />
+          <ExtractionBadge status={ev.status} corrected={Boolean(ev.correctedAt)} audio={ev.kind === "audio"} />
         </div>
         <h2 id="insp-title" className="mt-2 break-words font-serif text-xl leading-snug">{ev.filename}</h2>
         <p className="mt-1 font-mono text-micro text-ink-2">
-          {ev.kind.toUpperCase()} · {fmtBytes(ev.size)}{ev.pageCount ? ` · ${ev.pageCount} page(s)` : ""} · added {fmtDate(ev.uploadedAt)}{ev.method ? ` · ${ev.method === "ocr" || ev.method === "pdf-ocr" ? "OCR" : ev.method === "mixed" ? "text + OCR" : "embedded text"}` : ""}
+          {ev.kind.toUpperCase()} · {fmtBytes(ev.size)}{ev.pageCount && ev.kind !== "audio" ? ` · ${ev.pageCount} page(s)` : ""} · added {fmtDate(ev.uploadedAt)}{ev.audio?.durationSec ? ` · ${Math.floor(ev.audio.durationSec / 60)}:${String(Math.round(ev.audio.durationSec % 60)).padStart(2, "0")} min` : ""}{ev.audio?.languageCode ? ` · ${ev.audio.languageCode}` : ""}{ev.audio?.speakers ? ` · ${ev.audio.speakers} speaker(s)` : ""}{ev.method ? ` · ${ev.method === "speech" ? "ElevenLabs Scribe" : ev.method === "ocr" || ev.method === "pdf-ocr" ? "OCR" : ev.method === "mixed" ? "text + OCR" : "embedded text"}` : ""}
         </p>
         <p className="mt-1 break-all font-mono text-[0.625rem] text-ink-3" title="SHA-256">sha256 {ev.sha256}</p>
       </header>
@@ -66,7 +66,7 @@ export function EvidenceInspector({ ev, highlight }: { ev: Ev; highlight?: { pag
         <div role="tablist" aria-label="Evidence view" className="flex gap-4">
           {(["text", "original"] as const).map((v) => (
             <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)} className={`relative h-10 text-sm ${view === v ? "text-ink" : "text-ink-2 hover:text-ink"}`}>
-              {v === "text" ? "Extracted text" : "Original file"}
+              {v === "text" ? (ev.kind === "audio" ? "Transcript" : "Extracted text") : ev.kind === "audio" ? "Recording" : "Original file"}
               <span aria-hidden className={`absolute inset-x-0 bottom-0 h-[2px] bg-ink transition-transform ${view === v ? "scale-x-100" : "scale-x-0"}`} />
             </button>
           ))}
@@ -79,7 +79,9 @@ export function EvidenceInspector({ ev, highlight }: { ev: Ev; highlight?: { pag
 
       <div className="px-5 py-4">
         {view === "original" ? (
-          ev.kind === "image" ? (
+          ev.kind === "audio" ? (
+            <audio controls src={fileUrl} preload="metadata" className="w-full" aria-label={`Original recording ${ev.filename}`} />
+          ) : ev.kind === "image" ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={fileUrl} alt={`Original image ${ev.filename}`} className="max-h-[32rem] w-full rounded-[var(--radius-mark)] border border-rule object-contain bg-paper" />
           ) : ev.kind === "pdf" ? (

@@ -10,6 +10,7 @@ export const limits = {
   get maxUserStorageBytes() { return num("MAX_USER_STORAGE_MB", 100) * 1024 * 1024; },
   get aiDailyLimit() { return num("AI_DAILY_LIMIT", 8); },
   get ttsDailyLimit() { return num("TTS_DAILY_LIMIT", 3); },
+  get sttDailyLimit() { return num("STT_DAILY_LIMIT", 15); },
   get aiMaxInputChars() { return num("AI_MAX_INPUT_CHARS", 60000); },
 };
 
@@ -42,6 +43,10 @@ export const config = {
   elevenlabs(language: "en" | "hinglish" = "en") {
     const [apiKey] = need("ElevenLabs", ["ELEVENLABS_API_KEY", "ELEVENLABS_VOICE_ID"]);
     return { apiKey, voiceId: voiceFor(language), modelId: process.env.ELEVENLABS_MODEL_ID || "eleven_multilingual_v2" };
+  },
+  elevenlabsKey() {
+    const [apiKey] = need("ElevenLabs", ["ELEVENLABS_API_KEY"]);
+    return apiKey;
   },
   /** Non-throwing status for the settings page. Never exposes values. */
   status() {

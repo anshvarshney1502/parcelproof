@@ -1,10 +1,13 @@
 import Link from "next/link";
-import { Check, Circle, ArrowRight } from "lucide-react";
+import { Check, Circle, ArrowRight, Headphones, Mic } from "lucide-react";
+import { ButtonLink } from "@/components/ui/button";
 import { loadCase } from "@/lib/load-case";
 import { analysisState } from "@/lib/repo/analysis";
 import { collections } from "@/lib/db";
 import { fmtDate, fmtRelative } from "@/lib/format";
 import { CaseForm } from "@/components/app/case-form";
+import { Timeline } from "@/components/app/timeline";
+import { plain } from "@/lib/format";
 import { SectionLabel, Alert } from "@/components/ui/feedback";
 import { EvidenceBadge } from "@/components/ui/status";
 import { EVIDENCE_STATUSES, type CaseInput } from "@/lib/schemas";
@@ -63,7 +66,13 @@ export default async function CaseOverview({ params, searchParams }: PageProps<"
           {current ? (
             <>
               <p className="max-w-prose font-serif text-[1.25rem] leading-relaxed text-ink">{current.summary}</p>
-              <p className="mt-2 font-mono text-micro text-ink-2">AI-generated summary · analysis v{current.version} · {current.modelId} · review findings before relying on it</p>
+              <div className="mt-5 flex flex-wrap items-center gap-3">
+                <ButtonLink href={`${base}/briefing`} variant={hasAudio ? "accent" : "secondary"} size="sm" icon={<Headphones className="size-4" aria-hidden />}>
+                  {hasAudio ? "Listen to my case" : reviewedAll ? "Create the voice briefing" : "Review findings, then listen"}
+                </ButtonLink>
+                <ButtonLink href={`${base}/evidence`} variant="ghost" size="sm" icon={<Mic className="size-4" aria-hidden />}>Add a voice note</ButtonLink>
+              </div>
+              <p className="mt-3 font-mono text-micro text-ink-2">AI-generated summary · analysis v{current.version} · {current.modelId} · review findings before relying on it</p>
               <dl className="mt-6 flex flex-wrap gap-x-8 gap-y-3">
                 {EVIDENCE_STATUSES.map((s) => (
                   <div key={s} className="flex items-center gap-2">
@@ -77,6 +86,13 @@ export default async function CaseOverview({ params, searchParams }: PageProps<"
             <p className="max-w-prose text-ink-2">No analysis yet. Once you add evidence and run an analysis, a neutral summary of what the records show will appear here.</p>
           )}
         </section>
+
+        {current && current.events.length > 0 && (
+          <section id="timeline" className="scroll-mt-24">
+            <SectionLabel aside={<span className="font-mono text-micro text-ink-2">{current.events.length} events · each linked to its source</span>}>Timeline</SectionLabel>
+            <Timeline caseId={caseId} events={plain(current.events)} />
+          </section>
+        )}
 
         <section>
           <SectionLabel>Seller’s account</SectionLabel>

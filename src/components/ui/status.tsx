@@ -21,15 +21,15 @@ export function EvidenceBadge({ status }: { status: EvidenceStatus }) {
   );
 }
 
-export function ExtractionBadge({ status, corrected }: { status: "processing" | "extracted" | "failed"; corrected?: boolean }) {
+export function ExtractionBadge({ status, corrected, audio }: { status: "processing" | "extracted" | "failed"; corrected?: boolean; audio?: boolean }) {
   if (status === "processing")
-    return <span className={`${chip} border-rule text-ink-2`}><Loader2 className="size-3 animate-spin" aria-hidden />Processing</span>;
+    return <span className={`${chip} border-rule text-ink-2`}><Loader2 className="size-3 animate-spin" aria-hidden />{audio ? "Transcribing" : "Processing"}</span>;
   if (status === "failed")
-    return <span className={`${chip} border-[#e0bcb5] bg-err-bg text-err`}><AlertTriangle className="size-3" aria-hidden />Extraction failed</span>;
+    return <span className={`${chip} border-[#e0bcb5] bg-err-bg text-err`}><AlertTriangle className="size-3" aria-hidden />{audio ? "Transcription failed" : "Extraction failed"}</span>;
   return corrected ? (
     <span className={`${chip} border-[#c5d2dc] bg-info-bg text-archive-ink`}><PenLine className="size-3" aria-hidden />Text corrected</span>
   ) : (
-    <span className={`${chip} border-[#c4d6c1] bg-ok-bg text-ok`}><FileCheck2 className="size-3" aria-hidden />Text extracted</span>
+    <span className={`${chip} border-[#c4d6c1] bg-ok-bg text-ok`}><FileCheck2 className="size-3" aria-hidden />{audio ? "Transcribed" : "Text extracted"}</span>
   );
 }
 

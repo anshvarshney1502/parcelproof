@@ -1,3 +1,5 @@
+import path from "node:path";
+import fs from "node:fs";
 import PDFDocument from "pdfkit";
 import type { SourceRef } from "../types";
 import type { ReportContent } from "./content";
@@ -7,6 +9,10 @@ const MUTED = "#62665F";
 const RULE = "#DEDCD2";
 const RUST = "#9C4530";
 const BLUE = "#3F5A6C";
+
+// Built-in PDF fonts are Latin-only; Hindi from voice-note transcripts needs a Devanagari font.
+const DEVA_FONT = path.join(process.cwd(), "node_modules/@fontsource/noto-serif-devanagari/files/noto-serif-devanagari-devanagari-400-normal.woff");
+const DEVA = /[\u0900-\u097F\u1CD0-\u1CFF\uA8E0-\uA8FF]/;
 
 const STATUS_LABEL: Record<string, string> = {
   supported: "SUPPORTED BY RECORDS",
@@ -22,6 +28,23 @@ export function renderReportPdf(r: ReportContent, generatedAt = new Date()): Pro
   doc.on("data", (c: Buffer) => chunks.push(c));
   const done = new Promise<Buffer>((res) => doc.on("end", () => res(Buffer.concat(chunks))));
   const W = doc.page.width - 120;
+  const hasDeva = fs.existsSync(DEVA_FONT);
+  if (hasDeva) doc.registerFont("Deva", DEVA_FONT);
+  /** Writes text, switching to the Devanagari font for Hindi runs so mixed Hinglish renders correctly. */
+  const rich = (t: string, font: string, size: number, color: string, x: number | undefined, y: number | undefined, opts: PDFKit.Mixins.TextOptions) => {
+    if (!hasDeva || !DEVA.test(t)) {
+      doc.font(font).fontSize(size).fillColor(color);
+      return x === undefined ? doc.text(t, opts) : doc.text(t, x, y, opts);
+    }
+    const runs = t.match(/[\u0900-\u097F\u1CD0-\u1CFF\uA8E0-\uA8FF\u200C\u200D]+(?:\s+[\u0900-\u097F\u1CD0-\u1CFF\uA8E0-\uA8FF\u200C\u200D]+)*|[^\u0900-\u097F\u1CD0-\u1CFF\uA8E0-\uA8FF]+/g) ?? [t];
+    runs.forEach((run, i) => {
+      doc.font(DEVA.test(run) ? "Deva" : font).fontSize(size).fillColor(color);
+      const o = { ...opts, continued: i < runs.length - 1 };
+      if (i === 0 && x !== undefined) doc.text(run, x, y, o);
+      else doc.text(run, o);
+    });
+    return doc;
+  };
 
   const ensure = (h: number) => { if (doc.y + h > doc.page.height - 72) doc.addPage(); };
   const h1 = (t: string) => { doc.font("Times-Bold").fontSize(22).fillColor(INK).text(t, { width: W }); doc.moveDown(0.3); };
@@ -32,12 +55,12 @@ export function renderReportPdf(r: ReportContent, generatedAt = new Date()): Pro
     doc.moveTo(60, doc.y + 3).lineTo(60 + W, doc.y + 3).lineWidth(0.6).strokeColor(RULE).stroke();
     doc.moveDown(0.6);
   };
-  const body = (t: string, opts: PDFKit.Mixins.TextOptions = {}) => doc.font("Times-Roman").fontSize(11).fillColor(INK).text(t, { width: W, lineGap: 2.5, ...opts });
+  const body = (t: string, opts: PDFKit.Mixins.TextOptions = {}) => rich(t, "Times-Roman", 11, INK, undefined, undefined, { width: W, lineGap: 2.5, ...opts });
   const small = (t: string, color = MUTED) => doc.font("Helvetica").fontSize(8.5).fillColor(color).text(t, { width: W, lineGap: 1.5 });
   const quote = (ref: SourceRef) => {
     ensure(40);
     const x = doc.x;
-    doc.font("Times-Italic").fontSize(10).fillColor(INK).text(`“${ref.quote.replace(/\s+/g, " ").slice(0, 400)}”`, x + 12, doc.y, { width: W - 12, lineGap: 1.5 });
+    rich(`“${ref.quote.replace(/\s+/g, " ").slice(0, 400)}”`, "Times-Italic", 10, INK, x + 12, doc.y, { width: W - 12, lineGap: 1.5 });
     doc.font("Courier").fontSize(8).fillColor(BLUE).text(`${ref.sourceId} · page ${ref.page} · chars ${ref.start}–${ref.end}`, x + 12, doc.y, { width: W - 12 });
     doc.x = x;
     doc.moveDown(0.4);

@@ -8,7 +8,10 @@ import { detectFile, FileRejected, safeFilename } from "../files/validate";
 import { extractText, ExtractionFailed } from "../files/extract";
 import type { EvidenceDoc, PageText } from "../types";
 import { getOwnedCase, dropFile } from "./cases";
-import { audit, consume } from "./usage";
+import { audit, consume, refund } from "./usage";
+import { ConfigError } from "../env";
+import { scribeClient, type Transcriber } from "../voice/stt";
+import { VoiceError } from "../voice/tts";
 
 const UPLOADS_PER_DAY = 60;
 
@@ -24,7 +27,7 @@ export async function getOwnedEvidence(ownerId: string, evidenceId: string) {
   return doc;
 }
 
-export async function uploadEvidence(ownerId: string, caseId: string, filename: string, bytes: Uint8Array): Promise<EvidenceDoc> {
+export async function uploadEvidence(ownerId: string, caseId: string, filename: string, bytes: Uint8Array, deps: { transcriber?: Transcriber } = {}): Promise<EvidenceDoc> {
   const c = await collections();
   const kase = await getOwnedCase(ownerId, caseId);
   if (kase.archivedAt) throw new HttpError(409, "Restore this case before adding evidence.", "archived");
@@ -95,22 +98,36 @@ export async function uploadEvidence(ownerId: string, caseId: string, filename: 
     throw e;
   }
   await audit(ownerId, "evidence.upload", doc._id);
-  return runExtraction(doc, bytes);
+  return runExtraction(doc, bytes, deps);
 }
 
 /** Runs extraction and persists either the text or a visible failure. Never stores invented text. */
-export async function runExtraction(doc: EvidenceDoc, bytes?: Uint8Array): Promise<EvidenceDoc> {
+export async function runExtraction(doc: EvidenceDoc, bytes?: Uint8Array, deps: { transcriber?: Transcriber } = {}): Promise<EvidenceDoc> {
   const c = await collections();
   const data = bytes ?? (await readFile(doc.gridfsId));
   await c.evidence.updateOne({ _id: doc._id }, { $set: { status: "processing" }, $unset: { error: "" } });
+  let charged = false;
   try {
-    const out = await extractText(doc.kind, data);
-    const set = { status: "extracted" as const, pages: out.pages, pageCount: out.pageCount, method: out.method, warnings: out.warnings };
+    let audio;
+    if (doc.kind === "audio") {
+      const transcriber = deps.transcriber ?? scribeClient();
+      await consume(doc.ownerId, "stt", limits.sttDailyLimit);
+      charged = true;
+      audio = { transcriber, filename: doc.filename, mime: doc.mime };
+    }
+    const out = await extractText(doc.kind, data, audio);
+    const set = { status: "extracted" as const, pages: out.pages, pageCount: out.pageCount, method: out.method, warnings: out.warnings, ...(out.audio ? { audio: out.audio } : {}) };
     await c.evidence.updateOne({ _id: doc._id }, { $set: set, $unset: { error: "", originalPages: "", correctedAt: "" } });
     return { ...doc, ...set, error: undefined };
   } catch (e) {
-    const error = e instanceof ExtractionFailed ? e.message : "Text extraction failed unexpectedly. Try again, or enter the text manually.";
-    if (!(e instanceof ExtractionFailed)) console.error("[extract]", doc.kind, e instanceof Error ? e.message : "unknown");
+    if (charged && (e instanceof VoiceError || e instanceof ConfigError)) await refund(doc.ownerId, "stt");
+    const error =
+      e instanceof ExtractionFailed || e instanceof VoiceError || e instanceof ConfigError
+        ? e.message
+        : e instanceof HttpError
+          ? e.message
+          : "Text extraction failed unexpectedly. Try again, or enter the text manually.";
+    if (!(e instanceof ExtractionFailed || e instanceof VoiceError || e instanceof ConfigError || e instanceof HttpError)) console.error("[extract]", doc.kind, e instanceof Error ? e.message : "unknown");
     await c.evidence.updateOne({ _id: doc._id }, { $set: { status: "failed", error, pages: [] } });
     return { ...doc, status: "failed", error, pages: [] };
   }

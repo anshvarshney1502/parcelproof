@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/feedback";
 import { useToast } from "@/components/ui/toast";
 import { useState } from "react";
+import { DictateButton } from "./dictate";
 
 type FormIn = z.input<typeof caseInput>;
 
@@ -18,7 +19,7 @@ export function CaseForm({ initial, caseId }: { initial?: Partial<CaseInput>; ca
   const router = useRouter();
   const toast = useToast();
   const [serverError, setServerError] = useState<string>();
-  const { register, handleSubmit, formState: { errors, isSubmitting, isDirty } } = useForm<FormIn, unknown, CaseInput>({
+  const { register, handleSubmit, setValue, getValues, formState: { errors, isSubmitting, isDirty } } = useForm<FormIn, unknown, CaseInput>({
     resolver: zodResolver(caseInput),
     defaultValues: { currency: "INR", category: "not_received", ...initial } as FormIn,
   });
@@ -63,8 +64,9 @@ export function CaseForm({ initial, caseId }: { initial?: Partial<CaseInput>; ca
         <Field label="Response deadline" htmlFor="deadline" optional error={err("deadline")} hint="The date the marketplace or courier needs your reply." className="sm:col-span-3">
           <Input id="deadline" type="date" aria-invalid={inv("deadline")} {...register("deadline")} />
         </Field>
-        <Field label="What happened, in your words" htmlFor="description" optional error={err("description")} hint="Treated as your account of events — it is not used as evidence." className="sm:col-span-6">
+        <Field label="What happened, in your words" htmlFor="description" optional error={err("description")} hint="Type or speak it. Treated as your account of events — it is not used as evidence." className="sm:col-span-6">
           <Textarea id="description" rows={4} {...register("description")} />
+          <DictateButton onText={(t) => setValue("description", [getValues("description"), t].filter(Boolean).join(getValues("description") ? "\n" : ""), { shouldDirty: true })} />
         </Field>
       </fieldset>
 

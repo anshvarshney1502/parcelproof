@@ -5,6 +5,7 @@ import { config, limits } from "@/lib/env";
 import { EVIDENCE_STATUSES } from "@/lib/schemas";
 import { fmtRelative, plain } from "@/lib/format";
 import { AnalyzePanel } from "@/components/app/analyze-panel";
+import { BulkConfirm } from "@/components/app/bulk-confirm";
 import { FindingCard } from "@/components/app/finding-card";
 import { EvidenceBadge, STATUS_HELP } from "@/components/ui/status";
 import { Alert, EmptyState } from "@/components/ui/feedback";
@@ -53,6 +54,10 @@ export default async function ReviewPage({ params }: PageProps<"/app/cases/[case
               <p className="label">Summary · analysis v{current.version}</p>
               <p className="mt-2 max-w-prose font-serif text-[1.25rem] leading-relaxed">{current.summary}</p>
               <p className="mt-2 text-[0.8125rem] text-ink-2">These are evidence-review statuses, not legal decisions. ParcelProof does not decide who is right or whether anyone acted dishonestly.</p>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <BulkConfirm caseId={caseId} count={current.findings.filter((f) => f.review === "pending" && f.status === "supported" && !f.validationNotes.length).length} />
+                {reviewed === current.findings.length && current.findings.length > 0 && <ButtonLink href={`/app/cases/${caseId}/briefing`} size="sm" variant="accent">All reviewed — listen to my case</ButtonLink>}
+              </div>
             </div>
 
             {EVIDENCE_STATUSES.map((s) => {

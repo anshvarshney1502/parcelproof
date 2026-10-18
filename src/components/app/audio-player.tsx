@@ -12,7 +12,7 @@ const HEIGHTS = Array.from({ length: BARS }, (_, i) => 0.3 + 0.7 * Math.abs(Math
  * Real <audio> element with custom controls. The waveform bars are a fixed seeded pattern
  * (decorative); progress across them reflects the element's actual currentTime.
  */
-export function AudioPlayer({ src, label }: { src: string; label: string }) {
+export function AudioPlayer({ src, label, onTime, seekTo }: { src: string; label: string; onTime?: (t: number) => void; seekTo?: { t: number; n: number } }) {
   const audio = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [time, setTime] = useState(0);
@@ -24,7 +24,7 @@ export function AudioPlayer({ src, label }: { src: string; label: string }) {
     if (!a) return;
     const on = (ev: string, fn: () => void) => { a.addEventListener(ev, fn); return () => a.removeEventListener(ev, fn); };
     const offs = [
-      on("timeupdate", () => setTime(a.currentTime)),
+      on("timeupdate", () => { setTime(a.currentTime); onTime?.(a.currentTime); }),
       on("loadedmetadata", () => { setDuration(a.duration); setState("ready"); }),
       on("canplay", () => setState("ready")),
       on("play", () => setPlaying(true)),
@@ -33,7 +33,15 @@ export function AudioPlayer({ src, label }: { src: string; label: string }) {
       on("error", () => setState("error")),
     ];
     return () => offs.forEach((f) => f());
-  }, [src]);
+  }, [src, onTime]);
+
+  // External seek requests (e.g. clicking a transcript sentence); n changes on every request.
+  useEffect(() => {
+    const a = audio.current;
+    if (!a || !seekTo) return;
+    a.currentTime = seekTo.t;
+    void a.play().catch(() => {});
+  }, [seekTo]);
 
   const toggle = () => { const a = audio.current; if (!a) return; if (a.paused) void a.play().catch(() => setState("error")); else a.pause(); };
   const seek = (t: number) => { const a = audio.current; if (a && Number.isFinite(a.duration)) a.currentTime = Math.max(0, Math.min(a.duration, t)); };

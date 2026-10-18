@@ -86,7 +86,7 @@ export function buildAnalysisWorkflow(model: ModelClient) {
       const { evidence } = await collections();
       const docs = await evidence.find({ caseId: i.caseId, ownerId: i.ownerId, status: "extracted" }).sort({ uploadedAt: 1 }).toArray();
       if (!docs.length) throw new Error("No evidence with extracted text is available.");
-      const sources: Source[] = docs.map((d) => ({ sourceId: d.sourceId, evidenceId: d._id, pages: d.pages }));
+      const sources: Source[] = docs.map((d) => ({ sourceId: d.sourceId, evidenceId: d._id, pages: d.pages, kind: d.kind }));
       return { ...i, sources };
     }),
   });

@@ -56,7 +56,6 @@ export function CaseTabs({ caseId, pending }: { caseId: string; pending: number 
   const tabs = [
     { href: base, label: "Overview" },
     { href: `${base}/evidence`, label: "Evidence" },
-    { href: `${base}/timeline`, label: "Timeline" },
     { href: `${base}/review`, label: "Review", count: pending },
     { href: `${base}/briefing`, label: "Briefing" },
     { href: `${base}/report`, label: "Report" },

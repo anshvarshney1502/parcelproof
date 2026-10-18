@@ -6,11 +6,12 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { UploadCloud, FileText, Check, AlertTriangle, X } from "lucide-react";
 import { useToast } from "@/components/ui/toast";
 import { fmtBytes } from "@/lib/format";
+import { RecordButton } from "./recorder";
 
 type Item = { id: number; name: string; size: number; phase: "queued" | "uploading" | "processing" | "done" | "error"; progress: number; message?: string };
 
-const ACCEPT = ".pdf,.png,.jpg,.jpeg,.webp,.txt,.csv";
-const OK_EXT = /\.(pdf|png|jpe?g|webp|txt|csv)$/i;
+const ACCEPT = ".pdf,.png,.jpg,.jpeg,.webp,.txt,.csv,.mp3,.m4a,.aac,.ogg,.opus,.oga,.wav,.webm";
+const OK_EXT = /\.(pdf|png|jpe?g|webp|txt|csv|mp3|m4a|aac|ogg|opus|oga|wav|webm)$/i;
 
 /**
  * Upload dropzone. Progress reflects real bytes sent (XHR upload events); "Reading text" is shown
@@ -54,7 +55,7 @@ export function Dropzone({ caseId, maxBytes, remaining, disabled }: { caseId: st
     if (!list.length) return;
     if (list.length > remaining) toast("error", `This case can take ${remaining} more file(s).`);
     const queued: [File, Item][] = list.slice(0, Math.max(remaining, 0)).map((f, i) => {
-      const bad = !OK_EXT.test(f.name) ? "Unsupported type. Use PDF, PNG, JPG, WebP, TXT or CSV." : f.size > maxBytes ? `Larger than ${fmtBytes(maxBytes)}.` : f.size === 0 ? "The file is empty." : undefined;
+      const bad = !OK_EXT.test(f.name) ? "Unsupported type. Use PDF, images, TXT, CSV or a voice note." : f.size > maxBytes ? `Larger than ${fmtBytes(maxBytes)}.` : f.size === 0 ? "The file is empty." : undefined;
       return [f, { id: Date.now() + i, name: f.name, size: f.size, phase: bad ? "error" : "queued", progress: 0, message: bad }];
     });
     setItems((xs) => [...queued.map(([, it]) => it), ...xs].slice(0, 12));
@@ -76,12 +77,16 @@ export function Dropzone({ caseId, maxBytes, remaining, disabled }: { caseId: st
         <div className="flex flex-col items-start gap-3 px-6 py-7 sm:px-8">
           <UploadCloud className="size-5 text-archive-ink" aria-hidden />
           <div>
-            <p className="font-medium text-ink">{over ? "Drop to add to this case" : "Drag evidence files here"}</p>
-            <p className="mt-0.5 text-[0.8125rem] text-ink-2">PDF, PNG, JPG, WebP, TXT or CSV · up to {fmtBytes(maxBytes)} each · {remaining} slot(s) left in this case</p>
+            <p className="font-medium text-ink">{over ? "Drop to add to this case" : "Drag evidence files or voice notes here"}</p>
+            <p className="mt-0.5 text-[0.8125rem] text-ink-2">PDF, images, TXT, CSV, or audio (WhatsApp voice notes, call recordings) · up to {fmtBytes(maxBytes)} each · {remaining} slot(s) left</p>
           </div>
+          <div className="flex flex-wrap items-center gap-2">
+          <RecordButton label="Record a voice note" maxSeconds={300} disabled={disabled || remaining <= 0 || busy} onDone={(f) => addFiles([f])} />
           <button type="button" disabled={disabled || remaining <= 0 || busy} onClick={() => input.current?.click()} className="h-10 rounded-[var(--radius-mark)] border border-rule-strong bg-paper px-3.5 text-sm text-ink hover:border-ink-2 disabled:opacity-50">
             Choose files
           </button>
+          </div>
+          <p className="text-[0.75rem] text-ink-2">Recordings are transcribed by ElevenLabs Scribe, with speakers and timestamps, so findings can quote exactly what was said.</p>
           <input ref={input} type="file" accept={ACCEPT} multiple className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => { if (e.target.files) addFiles(e.target.files); e.target.value = ""; }} />
         </div>
       </div>
@@ -98,7 +103,7 @@ export function Dropzone({ caseId, maxBytes, remaining, disabled }: { caseId: st
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="truncate text-ink">{it.name}</span>
                     <span className="shrink-0 font-mono text-micro text-ink-2">
-                      {it.phase === "uploading" ? `${Math.round(it.progress * 100)}%` : it.phase === "processing" ? "reading text…" : it.phase === "queued" ? "queued" : fmtBytes(it.size)}
+                      {it.phase === "uploading" ? `${Math.round(it.progress * 100)}%` : it.phase === "processing" ? (/\.(mp3|m4a|aac|ogg|opus|oga|wav|webm)$/i.test(it.name) ? "transcribing…" : "reading text…") : it.phase === "queued" ? "queued" : fmtBytes(it.size)}
                     </span>
                   </div>
                   {(it.phase === "uploading" || it.phase === "processing") && (

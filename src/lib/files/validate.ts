@@ -19,6 +19,17 @@ export function detectFile(bytes: Uint8Array, filename: string): { kind: Evidenc
   if (startsWith(bytes, [0xff, 0xd8, 0xff])) return img(ext, ["jpg", "jpeg"], "image/jpeg");
   if (startsWith(bytes, ascii("RIFF")) && startsWith(bytes, ascii("WEBP"), 8)) return img(ext, ["webp"], "image/webp");
 
+  // Audio: voice notes and call recordings, transcribed by ElevenLabs Scribe.
+  const audio = (allowed: string[], mime: string) => {
+    if (!allowed.includes(ext)) throw new FileRejected(`File contents are ${mime} but the extension is .${ext}`);
+    return { kind: "audio" as const, mime };
+  };
+  if (startsWith(bytes, ascii("ID3")) || (bytes[0] === 0xff && (bytes[1] & 0xe0) === 0xe0 && ext === "mp3")) return audio(["mp3"], "audio/mpeg");
+  if (startsWith(bytes, ascii("OggS"))) return audio(["ogg", "opus", "oga"], "audio/ogg");
+  if (startsWith(bytes, ascii("RIFF")) && startsWith(bytes, ascii("WAVE"), 8)) return audio(["wav"], "audio/wav");
+  if (startsWith(bytes, [0x1a, 0x45, 0xdf, 0xa3])) return audio(["webm"], "audio/webm");
+  if (startsWith(bytes, ascii("ftyp"), 4) && ["m4a", "aac", "mp4"].includes(ext)) return audio(["m4a", "aac", "mp4"], "audio/mp4");
+
   if (ext === "txt" || ext === "csv") {
     if (bytes.includes(0)) throw new FileRejected("This looks like a binary file, not plain text");
     try {
@@ -28,7 +39,7 @@ export function detectFile(bytes: Uint8Array, filename: string): { kind: Evidenc
     }
     return ext === "csv" ? { kind: "csv", mime: "text/csv" } : { kind: "text", mime: "text/plain" };
   }
-  throw new FileRejected("Unsupported file type. Upload PDF, PNG, JPG, WebP, TXT or CSV.");
+  throw new FileRejected("Unsupported file type. Upload PDF, PNG, JPG, WebP, TXT, CSV, or a voice note (MP3, M4A, OGG/Opus, WAV, WebM).");
 }
 
 function img(ext: string, allowed: string[], mime: string) {

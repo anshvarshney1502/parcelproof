@@ -2,7 +2,7 @@ import { newId } from "../ids";
 import type { ComparisonOutput, EvidenceStatus, ExtractionOutput, ModelRef } from "../schemas";
 import type { CaseFinding, EvidenceEvent, EvidenceGap, PageText, SourceRef } from "../types";
 
-export type Source = { sourceId: string; evidenceId: string; pages: PageText[] };
+export type Source = { sourceId: string; evidenceId: string; pages: PageText[]; kind?: string };
 export type Rejection = { what: string; reason: string };
 
 /**

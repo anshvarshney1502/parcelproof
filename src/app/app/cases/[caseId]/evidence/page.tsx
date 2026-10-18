@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FileText, Image as ImageIcon, FileSpreadsheet, FileType2 } from "lucide-react";
+import { FileText, Image as ImageIcon, FileSpreadsheet, FileType2, AudioLines } from "lucide-react";
 import { loadCase } from "@/lib/load-case";
 import { listEvidence } from "@/lib/repo/evidence";
 import { limits } from "@/lib/env";
@@ -11,7 +11,7 @@ import { Alert, SectionLabel } from "@/components/ui/feedback";
 
 export const metadata = { title: "Evidence" };
 
-const ICON = { pdf: FileType2, image: ImageIcon, text: FileText, csv: FileSpreadsheet };
+const ICON = { pdf: FileType2, image: ImageIcon, text: FileText, csv: FileSpreadsheet, audio: AudioLines };
 
 export default async function EvidencePage({ params, searchParams }: PageProps<"/app/cases/[caseId]/evidence">) {
   const { caseId } = await params;
@@ -51,7 +51,7 @@ export default async function EvidencePage({ params, searchParams }: PageProps<"
                           <span className="truncate text-sm text-ink">{e.filename}</span>
                         </span>
                         <span className="mt-1 flex flex-wrap items-center gap-2">
-                          <ExtractionBadge status={e.status} corrected={Boolean(e.correctedAt)} />
+                          <ExtractionBadge status={e.status} corrected={Boolean(e.correctedAt)} audio={e.kind === "audio"} />
                           <span className="font-mono text-micro text-ink-2">{fmtBytes(e.size)}</span>
                         </span>
                       </span>
