@@ -75,8 +75,8 @@ export default async function Dashboard({ searchParams }: PageProps<"/app">) {
           <ol className="mt-8 grid gap-6 text-sm text-ink-2 sm:grid-cols-3">
             {[
               ["01", "Describe the dispute", "Order reference, dates and what the customer reported. Only what's relevant."],
-              ["02", "Add the evidence", "PDF, images, text or CSV. Text is extracted so you can check and correct it."],
-              ["03", "Review the findings", "Every statement cites a quotation. You confirm, correct or dismiss it."],
+              ["02", "Add the evidence", "PDFs, screenshots, CSVs and WhatsApp voice notes. Voice is transcribed by ElevenLabs Scribe."],
+              ["03", "Review, then listen", "Every finding cites a quotation. Confirm it, then hear your case read back in English or Hinglish."],
             ].map(([n, t, d]) => (
               <li key={n} className="border-t border-rule pt-3">
                 <span className="font-mono text-micro text-rust-ink">{n}</span>

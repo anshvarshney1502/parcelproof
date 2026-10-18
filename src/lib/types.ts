@@ -152,4 +152,4 @@ export type BriefingDoc = {
 
 export type UsageDoc = { _id?: unknown; ownerId: string; kind: "ai" | "tts" | "stt" | "upload"; day: string; count: number };
 export type AuditDoc = { _id?: unknown; ownerId: string; action: string; targetId?: string; at: Date };
-export type SettingsDoc = { _id?: unknown; ownerId: string; language: "en" | "hinglish"; voiceStyle: "calm" | "balanced" };
+export type SettingsDoc = { _id?: unknown; ownerId: string; language: "en" | "hinglish"; voiceStyle: "calm" | "balanced"; onboardedAt?: Date };

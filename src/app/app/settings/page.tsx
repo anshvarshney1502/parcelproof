@@ -6,6 +6,7 @@ import { collections } from "@/lib/db";
 import { config, limits } from "@/lib/env";
 import { fmtBytes } from "@/lib/format";
 import { PreferencesForm, DeleteAccount } from "@/components/app/settings-form";
+import { ReplayTourLink } from "@/components/app/tour-gate";
 
 export const metadata = { title: "Settings" };
 
@@ -55,6 +56,7 @@ export default async function SettingsPage() {
 
         <Section title="Voice briefing" desc="Defaults for new briefings.">
           <PreferencesForm initial={{ language: s.language, voiceStyle: s.voiceStyle }} />
+          <ReplayTourLink className="mt-6" />
         </Section>
 
         <Section title="Usage" desc="Daily limits reset at midnight UTC. They protect free-tier quotas.">

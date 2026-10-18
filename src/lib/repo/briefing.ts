@@ -18,6 +18,11 @@ export async function getSettings(ownerId: string): Promise<SettingsDoc> {
   return (await settings.findOne({ ownerId })) ?? { ownerId, language: "en", voiceStyle: "calm" };
 }
 
+export async function markOnboarded(ownerId: string) {
+  const { settings } = await collections();
+  await settings.updateOne({ ownerId }, { $set: { onboardedAt: new Date() }, $setOnInsert: { language: "en", voiceStyle: "calm" } }, { upsert: true });
+}
+
 export async function saveSettings(ownerId: string, s: Pick<SettingsDoc, "language" | "voiceStyle">) {
   const { settings } = await collections();
   await settings.updateOne({ ownerId }, { $set: { ...s, ownerId } }, { upsert: true });
