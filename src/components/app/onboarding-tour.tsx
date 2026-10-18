@@ -318,11 +318,23 @@ export function OnboardingTour({ open, onClose }: { open: boolean; onClose: (com
   // Auto-advance like a video; the final scene waits for the viewer.
   const elapsedRef = useRef(0);
   useEffect(() => {
-    if (!open || paused || last) return;
+    if (!open || paused || last || (sound && blocked)) return;
     const tick = setInterval(() => setElapsed((e) => (elapsedRef.current = e + 100)), 100);
     const next = setTimeout(() => go(i + 1), Math.max(0, duration * 1000 - elapsedRef.current));
     return () => { clearInterval(tick); clearTimeout(next); };
-  }, [open, paused, last, i, duration, go]);
+  }, [open, paused, last, i, duration, go, sound, blocked]);
+
+  // The click on this button is the user gesture browsers require before playing sound.
+  const startWithSound = () => {
+    go(0);
+    setPaused(false);
+    setSound(true);
+    const a = voice.current;
+    if (a) {
+      a.currentTime = 0;
+      void a.play().then(() => setBlocked(false), () => setBlocked(true));
+    } else setBlocked(false);
+  };
 
   useEffect(() => {
     const a = voice.current;
@@ -400,6 +412,35 @@ export function OnboardingTour({ open, onClose }: { open: boolean; onClose: (com
               </button>
             </div>
           </header>
+
+          <AnimatePresence>
+            {sound && blocked && (
+              <motion.div
+                key="sound-gate"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, transition: { duration: 0.25 } }}
+                className="absolute inset-x-0 bottom-0 top-[92px] z-20 grid place-items-center bg-paper/80 backdrop-blur-[3px] sm:top-[112px]"
+              >
+                <div className="flex flex-col items-center px-6 text-center">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); startWithSound(); }}
+                    autoFocus
+                    aria-label="Start the walkthrough with narration"
+                    className="group relative grid size-28 place-items-center rounded-full bg-rust-ink text-white shadow-[0_24px_60px_-20px_rgba(156,69,48,0.7)] transition-transform hover:scale-[1.04] active:scale-95"
+                  >
+                    {!reduce && <span aria-hidden className="absolute inset-0 animate-ping rounded-full bg-rust-ink/30" />}
+                    <Play className="relative ml-1.5 size-10 fill-current" aria-hidden />
+                  </button>
+                  <p className="mt-8 font-serif text-3xl text-ink">Start the walkthrough</p>
+                  <p className="mt-2 max-w-sm text-sm text-ink-2">A short narrated tour of ParcelProof, following one example case. Turn your sound on.</p>
+                  <button onClick={(e) => { e.stopPropagation(); setSound(false); setBlocked(false); }} className="mt-5 text-sm text-ink-2 underline-offset-4 hover:text-ink hover:underline">
+                    Watch without sound
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <main className="relative mx-auto grid w-full max-w-6xl flex-1 items-center gap-8 overflow-y-auto px-5 py-6 sm:px-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-14">
             <AnimatePresence mode="wait">
