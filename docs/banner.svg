@@ -16,9 +16,9 @@
     <text x="48" y="28" font-family="Georgia, 'Times New Roman', serif" font-size="28" fill="#242923">Parcel<tspan font-style="italic" fill="#9C4530">Proof</tspan></text>
   </g>
 
-  <text x="64" y="176" font-family="Georgia, 'Times New Roman', serif" font-size="52" fill="#242923" letter-spacing="-1">Every claim needs evidence.</text>
-  <text x="64" y="238" font-family="Georgia, 'Times New Roman', serif" font-size="52" font-style="italic" fill="#9C4530" letter-spacing="-1">Every piece of evidence needs context.</text>
-  <text x="64" y="296" font-family="'Helvetica Neue', Arial, sans-serif" font-size="20" fill="#62665F">Voice-first dispute preparation for online sellers · Gemma · Mastra · ElevenLabs · MongoDB Atlas</text>
+  <text x="64" y="176" font-family="Georgia, 'Times New Roman', serif" font-size="44" fill="#242923" letter-spacing="-0.8">Every claim needs evidence.</text>
+  <text x="64" y="230" font-family="Georgia, 'Times New Roman', serif" font-size="44" font-style="italic" fill="#9C4530" letter-spacing="-0.8">Every piece of evidence needs context.</text>
+  <text x="64" y="284" font-family="'Helvetica Neue', Arial, sans-serif" font-size="18" fill="#62665F">Voice-first dispute preparation for online sellers · Gemma · Mastra · ElevenLabs · MongoDB Atlas</text>
 
   <!-- status chips -->
   <g font-family="'IBM Plex Mono', Menlo, monospace" font-size="13" letter-spacing="1">
@@ -29,7 +29,7 @@
   </g>
 
   <!-- parcel illustration -->
-  <g transform="translate(930 120)">
+  <g transform="translate(1060 150) scale(0.8)">
     <path d="M-150 30 L-40 70" stroke="#242923" stroke-opacity=".35"/>
     <path d="M170 -10 L60 60" stroke="#B9563C" stroke-opacity=".7"/>
     <path d="M170 170 L70 120" stroke="#242923" stroke-opacity=".35"/>
