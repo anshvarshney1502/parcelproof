@@ -57,6 +57,7 @@ See `.env.example`. Everything is server-only; nothing uses `NEXT_PUBLIC_`.
 | `AUTH_SECRET` | Session encryption. `npx auth secret` generates one. |
 | `AUTH_GOOGLE_ID`, `AUTH_GOOGLE_SECRET` | Google OAuth client. |
 | `AUTH_TRUST_HOST=true` | Needed behind Render's proxy. |
+| `AUTH_URL` | Production only: the public HTTPS origin (e.g. `https://parcelproof-2yw4.onrender.com`). Without it, Google sign-in can fail with `redirect_uri_mismatch` behind Render's proxy. |
 | `MONGODB_URI`, `MONGODB_DB_NAME` | Atlas connection. |
 | `GEMMA_API_KEY`, `GEMMA_MODEL_ID` | Gemini API key and Gemma model (default `gemma-4-26b-a4b-it`). The app refuses non-`gemma-` model IDs. |
 | `ELEVENLABS_API_KEY`, `ELEVENLABS_VOICE_ID`, `ELEVENLABS_MODEL_ID` | Voice. `ELEVENLABS_VOICE_ID` is the English/default voice; use a voice in *your* ElevenLabs library. |
@@ -94,7 +95,8 @@ Set `ELEVENLABS_API_KEY` and `ELEVENLABS_VOICE_ID` (Voices → your voice → *I
 
 - Build: `npm ci && npm run build`
 - Start: `npm start`
-- Fill the `sync: false` variables in the dashboard, and add the Render URL as an OAuth redirect URI.
+- Fill the `sync: false` variables in the dashboard (set `AUTH_URL` to the service's https URL), and add the Render URL as an OAuth redirect URI.
+- Don't copy `NODE_ENV` from your local file; the build and start scripts force `production`.
 
 All persistent data (files, audio, cases) lives in MongoDB/GridFS; nothing depends on Render's filesystem. Temporary data (OCR language files in the OS temp dir) is re-downloaded after a restart. Free instances sleep when idle — the first request after a cold start can take 30–60 s.
 
