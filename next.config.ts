@@ -23,6 +23,8 @@ const csp = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Render's build machine reports many CPUs but little memory; unbounded workers get OOM-killed silently.
+  experimental: { cpus: 2 },
   turbopack: {
     rules: { "*.css": { loaders: ["@tailwindcss/turbopack"], as: "*.css" } },
   },
