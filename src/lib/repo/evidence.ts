@@ -15,7 +15,23 @@ import { VoiceError } from "../voice/tts";
 
 const UPLOADS_PER_DAY = 60;
 
+const STALE_PROCESSING_MS = 10 * 60 * 1000;
+
+/**
+ * Extraction runs inside the upload request. If the server restarts mid-way (Render free instances do),
+ * the row would stay "processing" forever and block analysis; mark such rows failed so they can be retried.
+ */
+export async function recoverInterrupted(ownerId: string, caseId: string) {
+  const { evidence } = await collections();
+  const cutoff = new Date(Date.now() - STALE_PROCESSING_MS);
+  await evidence.updateMany(
+    { caseId, ownerId, status: "processing", $or: [{ processingAt: { $lt: cutoff } }, { processingAt: { $exists: false }, uploadedAt: { $lt: cutoff } }] },
+    { $set: { status: "failed", error: "Processing was interrupted (the server restarted). Retry, or enter the text manually.", pages: [] } },
+  );
+}
+
 export async function listEvidence(ownerId: string, caseId: string) {
+  await recoverInterrupted(ownerId, caseId);
   const { evidence } = await collections();
   return evidence.find({ caseId, ownerId }).sort({ uploadedAt: 1 }).toArray();
 }
@@ -68,12 +84,19 @@ export async function uploadEvidence(ownerId: string, caseId: string, filename: 
   const sourceId = `S${counter.sourceCounter}`;
 
   const gridfsId = new ObjectId();
-  await new Promise<void>((resolve, reject) => {
-    Readable.from(Buffer.from(bytes))
-      .pipe(c.files.openUploadStreamWithId(gridfsId, name, { metadata: { ownerId, caseId, mime: detected.mime } }))
-      .on("finish", () => resolve())
-      .on("error", reject);
-  });
+  try {
+    await new Promise<void>((resolve, reject) => {
+      Readable.from(Buffer.from(bytes))
+        .pipe(c.files.openUploadStreamWithId(gridfsId, name, { metadata: { ownerId, caseId, mime: detected.mime } }))
+        .on("finish", () => resolve())
+        .on("error", reject);
+    });
+  } catch (e) {
+    // Remove any chunks already written and give the quota back; nothing was stored.
+    await dropFile(c.files, gridfsId.toHexString());
+    await refund(ownerId, "upload");
+    throw e;
+  }
 
   const doc: EvidenceDoc = {
     _id: newId(),
@@ -88,12 +111,14 @@ export async function uploadEvidence(ownerId: string, caseId: string, filename: 
     uploadedAt: new Date(),
     gridfsId: gridfsId.toHexString(),
     status: "processing",
+    processingAt: new Date(),
     pages: [],
   };
   try {
     await c.evidence.insertOne(doc);
   } catch (e) {
     await dropFile(c.files, doc.gridfsId);
+    await refund(ownerId, "upload");
     if ((e as { code?: number }).code === 11000) throw new HttpError(409, "This file is already in the case.", "duplicate");
     throw e;
   }
@@ -105,7 +130,7 @@ export async function uploadEvidence(ownerId: string, caseId: string, filename: 
 export async function runExtraction(doc: EvidenceDoc, bytes?: Uint8Array, deps: { transcriber?: Transcriber } = {}): Promise<EvidenceDoc> {
   const c = await collections();
   const data = bytes ?? (await readFile(doc.gridfsId));
-  await c.evidence.updateOne({ _id: doc._id }, { $set: { status: "processing" }, $unset: { error: "" } });
+  await c.evidence.updateOne({ _id: doc._id }, { $set: { status: "processing", processingAt: new Date() }, $unset: { error: "" } });
   let charged = false;
   try {
     let audio;

@@ -387,3 +387,50 @@ describe("ElevenLabs voice features", () => {
     expect(b.briefing.alignment?.starts).toEqual([0, 0.1]);
   });
 });
+
+describe("review fixes", () => {
+  it("survives concurrent first-of-day quota calls", async () => {
+    const { consume } = await import("@/lib/repo/usage");
+    await Promise.all(Array.from({ length: 6 }, () => consume(ALICE, "stt", 10)));
+    const { usage } = await collections();
+    expect((await usage.findOne({ ownerId: ALICE, kind: "stt" }))?.count).toBe(6);
+  });
+
+  it("marks evidence stuck in processing as failed so analysis is not blocked forever", async () => {
+    const c = await caseWithEvidence();
+    const { evidence } = await collections();
+    await evidence.updateOne({ caseId: c._id, sourceId: "S1" }, { $set: { status: "processing", processingAt: new Date(Date.now() - 11 * 60 * 1000) } });
+    await startAnalysis(ALICE, c._id, { model: fakeModel([EXTRACTION, COMPARISON]) });
+    const s1 = await evidence.findOne({ caseId: c._id, sourceId: "S1" });
+    expect(s1?.status).toBe("failed");
+    expect(s1?.error).toMatch(/interrupted/);
+  });
+
+  it("sorts by deadline with dated cases first and keeps undated ones", async () => {
+    const mk = (title: string, deadline?: string) => createCase(ALICE, { title, category: "other", currency: "INR", ...(deadline ? { deadline } : {}) });
+    await mk("no deadline A");
+    await mk("late", "2026-12-01");
+    await mk("soon", "2026-10-20");
+    await mk("no deadline B");
+    const rows = await listCases(ALICE, { view: "all", sort: "deadline" });
+    expect(rows.map((r) => r.title).slice(0, 2)).toEqual(["soon", "late"]);
+    expect(rows).toHaveLength(4);
+  });
+
+  it("refunds the upload quota and leaves no file when storage fails", async () => {
+    const c = await newCase();
+    const cols = await collections();
+    const { GridFSBucket } = await import("mongodb");
+    const { Writable } = await import("node:stream");
+    const proto = GridFSBucket.prototype as unknown as { openUploadStreamWithId: unknown };
+    const original = proto.openUploadStreamWithId;
+    proto.openUploadStreamWithId = () => new Writable({ write(_c, _e, cb) { cb(new Error("connection dropped")); } });
+    try {
+      await expect(uploadEvidence(ALICE, c._id, "a.txt", enc(TRACKING_TXT))).rejects.toThrow(/connection dropped/);
+    } finally {
+      proto.openUploadStreamWithId = original;
+    }
+    expect((await cols.usage.findOne({ ownerId: ALICE, kind: "upload" }))?.count).toBe(0);
+    expect(await cols.evidence.countDocuments({ caseId: c._id })).toBe(0);
+  });
+});

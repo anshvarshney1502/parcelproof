@@ -65,8 +65,17 @@ async function ensureIndexes(db: Db) {
       { key: { cacheKey: 1 } },
       { key: { caseId: 1, createdAt: -1 } },
     ]),
-    db.collection("usage").createIndexes([{ key: { ownerId: 1, kind: 1, day: 1 }, unique: true }]),
-    db.collection("audit_events").createIndexes([{ key: { ownerId: 1, at: -1 } }]),
+    db.collection("usage").createIndexes([
+      { key: { ownerId: 1, kind: 1, day: 1 }, unique: true },
+      // Daily counters are only read for "today"; keep 90 days for support, then let Atlas expire them.
+      { key: { createdAt: 1 }, expireAfterSeconds: 90 * 86400 },
+    ]),
+    db.collection("audit_events").createIndexes([
+      { key: { ownerId: 1, at: -1 } },
+      { key: { at: 1 }, expireAfterSeconds: 365 * 86400 },
+    ]),
+    // Auth.js stores an expiry on every session but never deletes expired rows.
+    db.collection("sessions").createIndexes([{ key: { expires: 1 }, expireAfterSeconds: 0 }]),
     db.collection("settings").createIndexes([{ key: { ownerId: 1 }, unique: true }]),
   ]);
 }

@@ -41,10 +41,11 @@ export function Timeline({ caseId, events }: { caseId: string; events: EvidenceE
     }
   };
 
-  const Row = ({ e }: { e: EvidenceEvent }) => {
+  // A render helper, not a nested component: a component declared here would remount every row on each render.
+  const row = (e: EvidenceEvent) => {
     const active = e.id === selected;
     return (
-      <li className="relative pl-8">
+      <li key={e.id} className="relative pl-8">
         <span aria-hidden className={`absolute left-[7px] top-[1.15rem] size-[9px] rounded-full border-2 transition-colors ${active ? "border-rust bg-rust" : e.dateCertainty === "exact" ? "border-ink bg-paper" : "border-ink-3 border-dashed bg-paper"}`} />
         <button onClick={() => setSelected(e.id)} aria-pressed={active} className={`w-full rounded-[var(--radius-mark)] px-3 py-2.5 text-left transition-colors ${active ? "bg-raised shadow-[inset_2px_0_0_var(--rust)]" : "hover:bg-raised/60"} ${e.review === "dismissed" ? "opacity-50" : ""}`}>
           <span className="flex flex-wrap items-baseline gap-x-2 font-mono text-micro text-ink-2">
@@ -63,13 +64,13 @@ export function Timeline({ caseId, events }: { caseId: string; events: EvidenceE
     <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
       <div className="min-w-0">
         <ol className="relative space-y-1 before:absolute before:bottom-2 before:left-[11px] before:top-2 before:w-px before:bg-rule-strong" aria-label="Dated events">
-          {dated.map((e) => <Row key={e.id} e={e} />)}
+          {dated.map(row)}
         </ol>
         {dated.length === 0 && <p className="text-sm text-ink-2">No event had a date the evidence could support.</p>}
         {undated.length > 0 && (
           <section className="mt-10" aria-labelledby="undated-h">
             <h2 id="undated-h" className="label border-b border-rule pb-2">Undated or uncertain — not placed on the timeline</h2>
-            <ol className="relative mt-3 space-y-1">{undated.map((e) => <Row key={e.id} e={e} />)}</ol>
+            <ol className="relative mt-3 space-y-1">{undated.map(row)}</ol>
           </section>
         )}
       </div>

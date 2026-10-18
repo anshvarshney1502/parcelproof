@@ -77,17 +77,34 @@ async function withTimeout<T>(p: Promise<T>, ms: number, label: string): Promise
   }
 }
 
+type OcrWorker = Awaited<ReturnType<typeof import("tesseract.js")["createWorker"]>>;
+
+/** One Tesseract worker per document: initialising it (WASM + language data) is the expensive part. */
+function ocrSession() {
+  let worker: Promise<OcrWorker> | undefined;
+  return {
+    async recognize(image: Uint8Array): Promise<string> {
+      worker ??= import("tesseract.js").then(({ createWorker }) => createWorker("eng", 1, { cachePath: os.tmpdir() }));
+      try {
+        const { data } = await withTimeout((await worker).recognize(Buffer.from(image)), OCR_TIMEOUT_MS, "Text recognition");
+        return data.text ?? "";
+      } catch (e) {
+        if (e instanceof ExtractionFailed) throw e;
+        throw new ExtractionFailed("Text recognition failed for this image.");
+      }
+    },
+    async close() {
+      if (worker) await (await worker.catch(() => undefined))?.terminate().catch(() => {});
+    },
+  };
+}
+
 async function ocr(image: Uint8Array): Promise<string> {
-  const { createWorker } = await import("tesseract.js");
-  const worker = await createWorker("eng", 1, { cachePath: os.tmpdir() });
+  const session = ocrSession();
   try {
-    const { data } = await withTimeout(worker.recognize(Buffer.from(image)), OCR_TIMEOUT_MS, "Text recognition");
-    return data.text ?? "";
-  } catch (e) {
-    if (e instanceof ExtractionFailed) throw e;
-    throw new ExtractionFailed("Text recognition failed for this image.");
+    return await session.recognize(image);
   } finally {
-    await worker.terminate().catch(() => {});
+    await session.close();
   }
 }
 
@@ -106,6 +123,7 @@ async function extractPdf(bytes: Uint8Array): Promise<Extraction> {
   const count = doc.numPages;
   const n = Math.min(count, MAX_PDF_PAGES);
   if (count > n) warnings.push(`Only the first ${n} of ${count} pages were processed.`);
+  const ocrPages = ocrSession();
   let ocrUsed = 0;
   let textPages = 0;
   try {
@@ -117,7 +135,7 @@ async function extractPdf(bytes: Uint8Array): Promise<Extraction> {
       else if (ocrUsed < MAX_OCR_PAGES) {
         ocrUsed++;
         try {
-          text = await ocr(await renderPage(page));
+          text = await ocrPages.recognize(await renderPage(page));
         } catch {
           warnings.push(`Page ${i} looks scanned and could not be read.`);
           text = "";
@@ -130,6 +148,7 @@ async function extractPdf(bytes: Uint8Array): Promise<Extraction> {
       page.cleanup();
     }
   } finally {
+    await ocrPages.close();
     await task.destroy();
   }
   return { pages, pageCount: count, method: ocrUsed === 0 ? "pdf-text" : textPages === 0 ? "pdf-ocr" : "mixed", warnings };

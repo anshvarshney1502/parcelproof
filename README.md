@@ -205,7 +205,7 @@ npm run dev                  # http://localhost:3000
 ```bash
 npm run typecheck   # TypeScript strict
 npm run lint        # ESLint (Next + React Compiler rules)
-npm test            # 51 tests — grounding, authz, uploads, workflow, voice, reports, HTTP hardening
+npm test            # 55 tests — grounding, authz, uploads, workflow, voice, reports, HTTP hardening
 npm run build       # production build
 ```
 

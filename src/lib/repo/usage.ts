@@ -7,7 +7,12 @@ import type { UsageDoc } from "../types";
 export async function consume(ownerId: string, kind: UsageDoc["kind"], limit: number) {
   const { usage } = await collections();
   const day = today();
-  await usage.updateOne({ ownerId, kind, day }, { $setOnInsert: { count: 0 } }, { upsert: true });
+  try {
+    await usage.updateOne({ ownerId, kind, day }, { $setOnInsert: { count: 0, createdAt: new Date() } }, { upsert: true });
+  } catch (e) {
+    // Two first-of-day calls can race on the unique index; the other one created the row, which is all we need.
+    if ((e as { code?: number }).code !== 11000) throw e;
+  }
   const res = await usage.findOneAndUpdate(
     { ownerId, kind, day, count: { $lt: limit } },
     { $inc: { count: 1 } },

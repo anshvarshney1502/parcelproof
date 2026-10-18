@@ -83,12 +83,16 @@ export async function listCases(
     const rx = new RegExp(opts.q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i");
     f.$or = [{ title: rx }, { orderRef: rx }, { customerRef: rx }, { channel: rx }];
   }
-  const sort: Sort =
-    opts.sort === "created" ? { createdAt: -1 } : opts.sort === "deadline" ? { deadline: 1, updatedAt: -1 } : { updatedAt: -1 };
-  const rows = await cases.find(f).sort(sort).limit(200).toArray();
-  // Mongo sorts missing deadlines first; push them last.
-  if (opts.sort === "deadline") rows.sort((a, b) => (a.deadline ?? "9999").localeCompare(b.deadline ?? "9999"));
-  return rows;
+  if (opts.sort === "deadline") {
+    // Mongo orders missing deadlines first, so fetch dated cases explicitly, then fill with undated ones.
+    const dated = await cases.find({ ...f, deadline: { $exists: true, $ne: "" } }).sort({ deadline: 1, updatedAt: -1 }).limit(200).toArray();
+    const undated = dated.length < 200
+      ? await cases.find({ ...f, $nor: [{ deadline: { $exists: true, $ne: "" } }] }).sort({ updatedAt: -1 }).limit(200 - dated.length).toArray()
+      : [];
+    return [...dated, ...undated];
+  }
+  const sort: Sort = opts.sort === "created" ? { createdAt: -1 } : { updatedAt: -1 };
+  return cases.find(f).sort(sort).limit(200).toArray();
 }
 
 export async function dashboardStats(ownerId: string) {

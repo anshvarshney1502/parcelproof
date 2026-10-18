@@ -44,6 +44,7 @@ export type EvidenceDoc = {
   uploadedAt: Date;
   gridfsId: string;
   status: "processing" | "extracted" | "failed";
+  processingAt?: Date;
   error?: string;
   warnings?: string[];
   pageCount?: number;
@@ -150,6 +151,6 @@ export type BriefingDoc = {
   createdAt: Date;
 };
 
-export type UsageDoc = { _id?: unknown; ownerId: string; kind: "ai" | "tts" | "stt" | "upload"; day: string; count: number };
+export type UsageDoc = { _id?: unknown; ownerId: string; kind: "ai" | "tts" | "stt" | "upload"; day: string; count: number; createdAt?: Date };
 export type AuditDoc = { _id?: unknown; ownerId: string; action: string; targetId?: string; at: Date };
 export type SettingsDoc = { _id?: unknown; ownerId: string; language: "en" | "hinglish"; voiceStyle: "calm" | "balanced"; onboardedAt?: Date };

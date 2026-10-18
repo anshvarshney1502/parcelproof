@@ -128,10 +128,12 @@ export async function generateBriefing(ownerId: string, caseId: string, language
       .on("error", reject),
   );
   // Older audio for this case is superseded; keep storage bounded.
-  const old = await briefings.find({ ownerId, caseId, _id: { $ne: doc._id }, gridfsId: { $exists: true } }).toArray();
+  const old = await briefings.find({ ownerId, caseId, _id: { $ne: doc._id } }).sort({ createdAt: -1 }).toArray();
   await briefings.updateOne({ _id: doc._id }, { $set: { status: "ready", gridfsId: gridfsId.toHexString(), ...(alignment ? { alignment } : {}) } });
-  for (const o of old.slice(2)) {
-    await dropFile(audio, o.gridfsId!);
+  // Keep the three most recent recordings (typically one per language plus the previous take); drop the rest and failed rows.
+  const keep = new Set(old.filter((o) => o.status === "ready").slice(0, 3).map((o) => o._id));
+  for (const o of old.filter((o) => !keep.has(o._id) && o.status !== "generating")) {
+    if (o.gridfsId) await dropFile(audio, o.gridfsId);
     await briefings.deleteOne({ _id: o._id });
   }
   await audit(ownerId, "briefing.generate", doc._id);

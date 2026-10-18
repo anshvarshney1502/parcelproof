@@ -391,7 +391,8 @@ export function OnboardingTour({ open, onClose }: { open: boolean; onClose: (com
           <header className="relative flex items-center justify-between px-4 pt-4 sm:px-8">
             <span className="flex items-center gap-2 font-serif text-lg"><Mark className="size-5" /><span className="hidden sm:inline">Parcel<span className="italic text-rust-ink">Proof</span></span></span>
             <div className="flex items-center gap-1">
-              <audio ref={voice} key={scene.id} src={`/tour/${scene.id}.mp3`} preload="auto" />
+              {/* One persistent element: Safari only lets an element play again once a gesture has unlocked it, so swapping src keeps narration going across scenes. */}
+              <audio ref={voice} src={`/tour/${scene.id}.mp3`} preload="auto" />
               <button
                 onClick={(e) => { e.stopPropagation(); if (blocked) { setBlocked(false); setSound(true); } else setSound((s) => !s); setPaused(false); if (voice.current) voice.current.currentTime = Math.min(elapsed / 1000, voice.current.duration || 0); }}
                 aria-pressed={sound}

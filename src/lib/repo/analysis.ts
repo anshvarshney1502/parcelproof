@@ -7,6 +7,7 @@ import { buildAnalysisWorkflow } from "../ai/workflow";
 import type { AnalysisDoc, CaseDoc, EvidenceDoc, ReviewDecision } from "../types";
 import { getOwnedCase } from "./cases";
 import { consume, refund, audit } from "./usage";
+import { recoverInterrupted } from "./evidence";
 
 const STALE_RUN_MS = 10 * 60 * 1000;
 
@@ -41,6 +42,7 @@ export async function analysisState(ownerId: string, caseId: string) {
 export async function startAnalysis(ownerId: string, caseId: string, opts: { force?: boolean; model?: ModelClient } = {}) {
   const c = await collections();
   const kase = await getOwnedCase(ownerId, caseId);
+  await recoverInterrupted(ownerId, caseId);
   const ev = await c.evidence.find({ caseId, ownerId }).toArray();
   if (ev.some((e) => e.status === "processing")) throw new HttpError(409, "Wait for evidence processing to finish.", "busy");
   if (!ev.some((e) => e.status === "extracted")) throw new HttpError(409, "Add at least one evidence file with readable text first.", "no_evidence");
