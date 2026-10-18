@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+/* ParcelProof — Editorial Evidence Studio tokens */
+:root {
+  --paper: #f5f3ed;
+  --paper-raised: #fcfbf7;
+  --paper-sunk: #ece9e0;
+  --ink: #242923;
+  --ink-2: #62665f;
+  --ink-3: #85897f;
+  --rule: #dedcd2;
+  --rule-strong: #c9c6b9;
+  --moss: #747b61;
+  --moss-ink: #565c46;
+  --rust: #b9563c;
+  --rust-ink: #9c4530;
+  --archive: #526f83;
+  --archive-ink: #3f5a6c;
+  --ok: #3e6b48;
+  --ok-bg: #e5ede3;
+  --warn: #8a5a12;
+  --warn-bg: #f5ead2;
+  --err: #8f2a22;
+  --err-bg: #f6e1dd;
+  --info-bg: #e2e9ee;
+  --focus: #3f5a6c;
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-raised: var(--paper-raised);
+  --color-sunk: var(--paper-sunk);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-moss: var(--moss);
+  --color-moss-ink: var(--moss-ink);
+  --color-rust: var(--rust);
+  --color-rust-ink: var(--rust-ink);
+  --color-archive: var(--archive);
+  --color-archive-ink: var(--archive-ink);
+  --color-ok: var(--ok);
+  --color-ok-bg: var(--ok-bg);
+  --color-warn: var(--warn);
+  --color-warn-bg: var(--warn-bg);
+  --color-err: var(--err);
+  --color-err-bg: var(--err-bg);
+  --color-info-bg: var(--info-bg);
+
+  --font-serif: var(--font-newsreader), Georgia, serif;
+  --font-sans: var(--font-dm-sans), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  /* One radius rule: 2px for marks and inputs, 6px for objects. */
+  --radius-mark: 2px;
+  --radius-obj: 6px;
+
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: 1rem;
+}
+
+html {
+  background: var(--paper);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+body {
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  line-height: 1.55;
+}
+
+/* Subtle paper grain, purely decorative. */
+.grain {
+  background-image: radial-gradient(rgba(36, 41, 35, 0.035) 1px, transparent 1px);
+  background-size: 3px 3px;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: var(--radius-mark);
+}
+
+::selection {
+  background: #e9d3c9;
+}
+
+/* Section label used throughout: small caps mono, ruled. */
+.label {
+  font-family: var(--font-mono);
+  font-size: var(--text-micro);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.link-underline {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition: background-size 220ms ease;
+}
+.link-underline:hover,
+.link-underline[aria-current="page"] {
+  background-size: 100% 1px;
+}
+
+/* Highlight a cited quotation inside extracted text. */
+mark.cite {
+  background: #f1dccf;
+  color: inherit;
+  box-shadow: 0 0 0 2px #f1dccf;
+  border-radius: 1px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

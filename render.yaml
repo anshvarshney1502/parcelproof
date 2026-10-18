@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: parcelproof
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /privacy
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: MONGOMS_DISABLE_POSTINSTALL
+        value: "1"
+      - key: AUTH_TRUST_HOST
+        value: "true"
+      - key: MONGODB_DB_NAME
+        value: parcelproof
+      - key: GEMMA_MODEL_ID
+        value: gemma-4-26b-a4b-it
+      - key: ELEVENLABS_MODEL_ID
+        value: eleven_multilingual_v2
+      - key: AUTH_SECRET
+        generateValue: true
+      - key: APP_URL
+        sync: false
+      - key: AUTH_GOOGLE_ID
+        sync: false
+      - key: AUTH_GOOGLE_SECRET
+        sync: false
+      - key: MONGODB_URI
+        sync: false
+      - key: GEMMA_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+      - key: ELEVENLABS_VOICE_ID
+        sync: false

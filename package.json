@@ -1,0 +1,52 @@
+{
+  "name": "parcelproof",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@auth/mongodb-adapter": "^3.11.3",
+    "@elevenlabs/elevenlabs-js": "^2.73.0",
+    "@google/genai": "^2.30.0",
+    "@hookform/resolvers": "^5.9.2",
+    "@mastra/core": "^1.78.0",
+    "@napi-rs/canvas": "^1.0.11",
+    "@react-three/fiber": "^9.8.2",
+    "framer-motion": "^14.3.0",
+    "lucide-react": "^1.59.0",
+    "mongodb": "^6.21.0",
+    "next": "16.4.2",
+    "next-auth": "^5.0.0-beta.32",
+    "papaparse": "^5.7.0",
+    "pdfjs-dist": "^6.4.299",
+    "pdfkit": "^0.20.2",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-hook-form": "^7.90.0",
+    "tesseract.js": "^7.0.0",
+    "three": "^0.186.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "^4",
+    "@types/node": "^24.19.2",
+    "@types/papaparse": "^5.5.2",
+    "@types/pdfkit": "^0.17.6",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@types/three": "^0.186.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.2",
+    "mongodb-memory-server": "^11.3.0",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
+  }
+}
